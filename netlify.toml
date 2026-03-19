@@ -1,0 +1,22 @@
+# Netlify Configuration for AI TraceFinder
+# This configuration deploys the full stack application
+
+[build]
+  command = "npm install && npm run build"
+  functions = "functions"
+  publish = "frontend"
+
+[env]
+  [env.production]
+    BACKEND_URL = "https://ai-tracefinder-api.herokuapp.com"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# Rewrite for single page app
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
