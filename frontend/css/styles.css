@@ -1,0 +1,168 @@
+body {
+    font-family: Arial;
+    text-align: center;
+    margin-top: 60px;
+    /* Cyber blue gradient background */
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: white;
+}
+
+
+/* Main container panel */
+
+.container {
+    background: rgba(0, 0, 0, 0.65);
+    padding: 30px;
+    border-radius: 10px;
+    width: 500px;
+    margin: auto;
+    position: relative;
+    overflow: hidden;
+    animation: glow 3s infinite alternate;
+}
+
+
+/* Button styling */
+
+button {
+    padding: 12px 25px;
+    background: #00bcd4;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button {
+    margin-top: 10px;
+}
+
+button:hover {
+    background: #0097a7;
+    transform: scale(1.05);
+    box-shadow: 0 0 15px #00e5ff;
+}
+
+
+/* Result cards */
+
+.result-card {
+    margin-top: 20px;
+    padding: 15px;
+    background: white;
+    color: black;
+    border-radius: 8px;
+    display: inline-block;
+    width: 200px;
+    animation: fadeIn 0.7s ease-in-out;
+}
+
+.result-card img {
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+
+/* Fade animation */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* Glow animation */
+
+@keyframes glow {
+    from {
+        box-shadow: 0 0 10px #00e5ff;
+    }
+    to {
+        box-shadow: 0 0 25px #00e5ff;
+    }
+}
+
+
+/* scanning line */
+
+.container::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 2px;
+    background: #00e5ff;
+    animation: scan 3s linear infinite;
+}
+
+@keyframes scan {
+    0% {
+        top: 0%;
+    }
+    50% {
+        top: 100%;
+    }
+    100% {
+        top: 0%;
+    }
+}
+
+.progress-bar {
+    width: 100%;
+    background: #ddd;
+    border-radius: 6px;
+    margin-top: 6px;
+    overflow: hidden;
+}
+
+.progress {
+    height: 20px;
+    background: #00bcd4;
+    color: white;
+    text-align: center;
+    font-size: 12px;
+    line-height: 20px;
+}
+
+
+/* scanner tag */
+
+.scanner-tag {
+    background: #00bcd4;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+
+/* authentic */
+
+.status-good {
+    margin-top: 6px;
+    padding: 5px;
+    background: #4CAF50;
+    color: white;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+
+/* tampering warning */
+
+.status-warning {
+    margin-top: 6px;
+    padding: 5px;
+    background: #ff9800;
+    color: white;
+    border-radius: 4px;
+    font-size: 13px;
+}
