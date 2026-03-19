@@ -1,0 +1,145 @@
+[
+  {
+    "timestamp": "2026-03-13T13:12:38.728864",
+    "filename": "s10_1.tif",
+    "scanner_id": "EpsonV370-1",
+    "confidence": 0.27149999999999996,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-03-12T20:11:24.358606",
+    "filename": "s1_71_c.tif",
+    "scanner_id": "Canon9000-2",
+    "confidence": 0.20244444444444443,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-03-12T20:11:05.002810",
+    "filename": "s2_1.tif",
+    "scanner_id": "Canon9000-2",
+    "confidence": 0.16416666666666666,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-03-12T20:10:52.731755",
+    "filename": "s8_2.tif",
+    "scanner_id": "HP",
+    "confidence": 0.17683333333333334,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-03-12T20:10:41.182804",
+    "filename": "s8_2.tif",
+    "scanner_id": "HP",
+    "confidence": 0.1768333333333333,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-03-12T20:10:12.576480",
+    "filename": "s10_1.tif",
+    "scanner_id": "EpsonV370-1",
+    "confidence": 0.2715000000000001,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-03-12T08:20:00.958530",
+    "filename": "s10_1.tif",
+    "scanner_id": "EpsonV370-1",
+    "confidence": 0.27149999999999996,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-03-12T07:36:59.723365",
+    "filename": "s1_71_c.tif",
+    "scanner_id": "Canon9000-2",
+    "confidence": 0.2024444444444444,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-03-11T17:25:45.297656",
+    "filename": "s1_71_c.tif",
+    "scanner_id": "Canon9000-2",
+    "confidence": 0.2024444444444444,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-03-11T17:21:09.752668",
+    "filename": "s10_1.tif",
+    "scanner_id": "EpsonV370-1",
+    "confidence": 0.2715,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-03-11T17:16:51.628595",
+    "filename": "s8_2.tif",
+    "scanner_id": "HP",
+    "confidence": 0.17683333333333334,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-03-11T17:16:10.285940",
+    "filename": "s2_1.tif",
+    "scanner_id": "Canon9000-2",
+    "confidence": 0.16416666666666668,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-03-11T17:16:03.256127",
+    "filename": "s2_1.tif",
+    "scanner_id": "Canon9000-2",
+    "confidence": 0.16416666666666666,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  }
+]

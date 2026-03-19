@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI TraceFinder - Image Forensics Analysis Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='new_styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8m3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5m-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11m3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1>AI TraceFinder</h1>
+                        <p class="tagline">Advanced Image Forensics & Scanner Identification</p>
+                    </div>
+                </div>
+                <nav class="nav-links">
+                    <a href="#home" class="nav-link">Home</a>
+                    <a href="#analyze" class="nav-link">Analyze</a>
+                    <a href="#history" class="nav-link">History</a>
+                    <a href="#compare" class="nav-link">Compare</a>
+                    <a href="#info" class="nav-link">Features</a>
+                    <a href="#about" class="nav-link">About</a>
+                    <a href="#help" class="nav-link">Help</a>
+                    <a href="#" id="apiDocsBtn" class="nav-link">API</a>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Home Section -->
+            <section id="home" class="home-section">
+                <div class="home-container">
+                    <div class="home-hero">
+                        <h2>Welcome to AI TraceFinder</h2>
+                        <p>Advanced Image Forensics & Scanner Identification System</p>
+                        <p class="hero-subtitle">Identify image sources, detect tampering, and authenticate documents with AI-powered forensic analysis</p>
+                        <button class="btn btn-primary" onclick="document.querySelector('[href=\"#analyze\"]').click(); return false;">Get Started</button>
+                    </div>
+
+                    <div class="why-tracefinder">
+                        <h3>Why Choose TraceFinder?</h3>
+                        <div class="use-cases-grid">
+                            <div class="use-case-card">
+                                <div class="use-case-icon">⚖️</div>
+                                <h4>Forensic Investigation</h4>
+                                <p>Authenticate and trace image sources in legal cases</p>
+                            </div>
+                            <div class="use-case-card">
+                                <div class="use-case-icon">🔐</div>
+                                <h4>Copyright Protection</h4>
+                                <p>Identify unauthorized image sources</p>
+                            </div>
+                            <div class="use-case-card">
+                                <div class="use-case-icon">✓</div>
+                                <h4>Authenticity Verification</h4>
+                                <p>Verify genuine vs. forged documents</p>
+                            </div>
+                            <div class="use-case-card">
+                                <div class="use-case-icon">📸</div>
+                                <h4>Media Authentication</h4>
+                                <p>Detect deepfakes and fabricated images</p>
+                            </div>
+                            <div class="use-case-card">
+                                <div class="use-case-icon">📊</div>
+                                <h4>Quality Assurance</h4>
+                                <p>Track image sources in media production</p>
+                            </div>
+                            <div class="use-case-card">
+                                <div class="use-case-icon">📄</div>
+                                <h4>Document Authentication</h4>
+                                <p>Verify scanned document sources</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Upload Section -->
+            <section id="analyze" class="upload-section">
+                <div class="upload-container">
+                    <h2>Upload & Analyze</h2>
+                    
+                    <div class="analysis-tabs">
+                        <button class="tab-btn active" data-tab="single">Single Image</button>
+                        <button class="tab-btn" data-tab="batch">Batch Upload</button>
+                    </div>
+
+                    <!-- Single Image Upload -->
+                    <div id="single" class="tab-content active">
+                        <div class="upload-area" id="uploadArea">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="upload-icon">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <h3>Drop image here or click to upload</h3>
+                            <p>Supported formats: JPG, PNG, TIFF, BMP</p>
+                            <input type="file" id="imageInput" accept=".jpg,.jpeg,.png,.tif,.tiff,.bmp" style="display:none;">
+                        </div>
+
+                        <div id="previewContainer" style="display:none;">
+                            <div class="preview-box">
+                                <img id="previewImage" alt="Preview" />
+                            </div>
+                            <div class="image-info">
+                                <p><strong>File:</strong> <span id="fileName"></span></p>
+                                <p><strong>Size:</strong> <span id="fileSize"></span></p>
+                            </div>
+                        </div>
+
+                        <button id="analyzeBtn" class="btn btn-primary" style="display:none;">
+                            <span class="btn-text">Analyze Image</span>
+                            <span class="btn-loader" style="display:none;">
+                                <span class="spinner"></span>
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- Batch Upload -->
+                    <div id="batch" class="tab-content" style="display:none;">
+                        <div class="batch-upload-area" id="batchUploadArea">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="upload-icon">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <h3>Drop multiple images here</h3>
+                            <p>Upload up to 10 images for batch analysis</p>
+                            <input type="file" id="batchImageInput" accept=".jpg,.jpeg,.png,.tif,.tiff,.bmp" multiple style="display:none;">
+                        </div>
+
+                        <div id="batchFileList" style="display:none;">
+                            <h4>Files to analyze:</h4>
+                            <ul id="filesList"></ul>
+                        </div>
+
+                        <button id="batchAnalyzeBtn" class="btn btn-primary" style="display:none;">
+                            <span class="btn-text">Analyze All</span>
+                            <span class="btn-loader" style="display:none;">
+                                <span class="spinner"></span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="results" class="results-section">
+                <div class="results-container">
+                    <h2>Analysis Results</h2>
+
+                    <!-- Main Result Card -->
+                    <div id="mainResultCard" class="result-card" style="display:none;">
+                        <div class="result-header">
+                            <div class="scanner-identification">
+                                <div class="scanner-badge">
+                                    <span class="badge-label">Identified Scanner</span>
+                                    <span class="badge-value" id="scannerId">-</span>
+                                </div>
+                                <div class="confidence-display">
+                                    <span class="confidence-label">Confidence</span>
+                                    <div class="confidence-bar">
+                                        <div class="confidence-fill" id="confidenceFill"></div>
+                                        <span class="confidence-text" id="confidenceText">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="results-grid">
+                            <!-- Image Info -->
+                            <div class="result-box">
+                                <h4>Image Information</h4>
+                                <div class="info-group">
+                                    <div class="info-item">
+                                        <span class="label">Dimensions:</span>
+                                        <span id="imageDim">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">Data Type:</span>
+                                        <span id="imageDataType">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">Min Value:</span>
+                                        <span id="imageMinVal">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">Max Value:</span>
+                                        <span id="imageMaxVal">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FFT Analysis -->
+                            <div class="result-box">
+                                <h4>FFT Analysis</h4>
+                                <div class="info-group">
+                                    <div class="info-item">
+                                        <span class="label">Mean Magnitude:</span>
+                                        <span id="fftMean">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">Max Magnitude:</span>
+                                        <span id="fftMax">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">Peak Frequency Ratio:</span>
+                                        <span id="fftPeakRatio">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">Energy Concentration:</span>
+                                        <span id="fftEnergy">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Texture Metrics -->
+                            <div class="result-box">
+                                <h4>Texture Metrics</h4>
+                                <div class="info-group">
+                                    <div class="info-item">
+                                        <span class="label">Mean Texture:</span>
+                                        <span id="textureMean">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">Texture Std Dev:</span>
+                                        <span id="textureStd">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">Edge Strength:</span>
+                                        <span id="edgeStrength">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">Noise Level:</span>
+                                        <span id="noiseLevel">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Forensic Indicators -->
+                            <div class="result-box">
+                                <h4>Forensic Indicators</h4>
+                                <div class="info-group">
+                                    <div class="info-item">
+                                        <span class="label">Compression Artifacts:</span>
+                                        <span id="compressionArtifacts">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">Unusual Patterns:</span>
+                                        <span id="unusualPatterns">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">Potential Tampering:</span>
+                                        <span id="tampering">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="label">Channel Mismatch:</span>
+                                        <span id="channelMismatch">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recommendations -->
+                        <div class="recommendations-box">
+                            <h4>Recommendations</h4>
+                            <ul id="recommendations" class="recommendations-list"></ul>
+                        </div>
+
+                        <div class="button-group">
+                            <button id="downloadResultsBtn" class="btn btn-secondary">Download Report</button>
+                            <button id="newAnalysisBtn" class="btn btn-primary">New Analysis</button>
+                        </div>
+                    </div>
+
+                    <!-- Batch Results -->
+                    <div id="batchResultsContainer" style="display:none;">
+                        <div class="batch-summary">
+                            <div class="summary-stat">
+                                <span class="stat-label">Total Analyzed</span>
+                                <span class="stat-value" id="totalAnalyzed">0</span>
+                            </div>
+                            <div class="summary-stat">
+                                <span class="stat-label">Successful</span>
+                                <span class="stat-value success" id="totalSuccessful">0</span>
+                            </div>
+                            <div class="summary-stat">
+                                <span class="stat-label">Failed</span>
+                                <span class="stat-value error" id="totalFailed">0</span>
+                            </div>
+                        </div>
+
+                        <div class="batch-results-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Filename</th>
+                                        <th>Status</th>
+                                        <th>Scanner ID</th>
+                                        <th>Confidence</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="batchResultsBody">
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <button id="newBatchAnalysisBtn" class="btn btn-primary">Analyze More</button>
+                    </div>
+
+                    <!-- No Results Message -->
+                    <div id="noResultsMessage" class="no-results">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <p>Analysis results will appear here</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Information Section -->
+            <section id="info" class="info-section">
+                <div class="info-container">
+                    <h2>Features & Technology</h2>
+
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8m3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5m-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11m3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+                                </svg>
+                            </div>
+                            <h4>Scanner Identification</h4>
+                            <p>Identifies source camera/scanner with advanced PRNU analysis</p>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </div>
+                            <h4>FFT Analysis</h4>
+                            <p>Frequency domain analysis for artifact detection</p>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                </svg>
+                            </div>
+                            <h4>Texture Analysis</h4>
+                            <p>LBP and gradient-based texture feature extraction</p>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2v20m-7-5h14M5 9h14M3 5h18"></path>
+                                </svg>
+                            </div>
+                            <h4>Batch Processing</h4>
+                            <p>Analyze multiple images simultaneously</p>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-5.64-3v-3.85a3.37 3.37 0 1 1 6.73 0v3.85a3.37 3.37 0 0 0-1.09 2.87c0 .55.12 1.07.32 1.56"></path>
+                                </svg>
+                            </div>
+                            <h4>Tampering Detection</h4>
+                            <p>Identifies potential image manipulation and artifacts</p>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                </svg>
+                            </div>
+                            <h4>REST API</h4>
+                            <p>Full API support for integration with other systems</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analysis History Section -->
+            <section id="history" class="history-section" style="display:none;">
+                <div class="history-container">
+                    <h2>Analysis History</h2>
+                    
+                    <div class="history-controls">
+                        <input type="text" id="historySearchInput" placeholder="Search by scanner model...">
+                        <select id="historyScannerFilter">
+                            <option value="">All Scanners</option>
+                            <option value="Canon_EOS">Canon EOS</option>
+                            <option value="Nikon_D850">Nikon D850</option>
+                            <option value="Epson_Scanner">Epson Scanner</option>
+                            <option value="iPhone_12">iPhone 12</option>
+                            <option value="Samsung_Galaxy">Samsung Galaxy</option>
+                        </select>
+                        <select id="historySortBy">
+                            <option value="latest">Latest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="confidence">Highest Confidence</option>
+                        </select>
+                        <button class="btn btn-secondary" id="clearHistoryBtn">Clear History</button>
+                    </div>
+
+                    <div class="history-table-container">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>File</th>
+                                    <th>Scanner Model</th>
+                                    <th>Confidence</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <tr class="empty-row">
+                                    <td colspan="6">No analysis history yet</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="noHistoryMessage" class="no-results">
+                        <p>Start by analyzing an image to build your history</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Comparison Section -->
+            <section id="compare" class="comparison-section" style="display:none;">
+                <div class="comparison-container">
+                    <h2>Document Comparison</h2>
+                    <p class="section-subtitle">Compare analysis results from multiple images</p>
+
+                    <div class="comparison-controls">
+                        <button class="btn btn-primary" id="selectCompareImagesBtn">
+                            <span class="btn-text">Select Images to Compare</span>
+                            <span class="btn-loader" style="display:none;">
+                                <span class="spinner"></span>
+                            </span>
+                        </button>
+                    </div>
+
+                    <div id="comparisonResults" style="display:none;">
+                        <div class="comparison-grid" id="comparisonGrid">
+                            <!-- Comparison cards will be inserted here -->
+                        </div>
+
+                        <div class="comparison-summary">
+                            <h3>Summary</h3>
+                            <div id="comparisonSummaryContent"></div>
+                        </div>
+                    </div>
+
+                    <div id="noComparisonMessage" class="no-results">
+                        <p>Select images from history to compare their analysis results</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- About Section -->
+            <section id="about" class="about-section" style="display:none;">
+                <div class="about-container">
+                    <h2>About AI TraceFinder</h2>
+
+                    <div class="about-content">
+                        <div class="about-text">
+                            <h3>Advanced Image Forensics System</h3>
+                            <p>AI TraceFinder is a state-of-the-art image forensics analysis tool that identifies the source scanner/camera of digital images using advanced signal processing, machine learning, and deep analysis techniques.</p>
+                            
+                            <h3>Technology Stack</h3>
+                            <ul class="tech-list">
+                                <li><strong>Backend:</strong> Python 3.8+ with Flask</li>
+                                <li><strong>Image Processing:</strong> OpenCV, NumPy, SciPy</li>
+                                <li><strong>ML/Analysis:</strong> scikit-learn, scikit-image</li>
+                                <li><strong>Frontend:</strong> HTML5, CSS3, Vanilla JavaScript</li>
+                                <li><strong>Forensic Methods:</strong> PRNU, FFT, LBP, Wavelets, Statistical Analysis</li>
+                            </ul>
+
+                            <h3>Supported Scanners & Cameras</h3>
+                            <ul class="scanner-list">
+                                <li>Canon EOS (DSLR)</li>
+                                <li>Nikon D850 (DSLR)</li>
+                                <li>Epson Scanner (Document Scanner)</li>
+                                <li>iPhone 12 (Smartphone)</li>
+                                <li>Samsung Galaxy (Smartphone)</li>
+                                <li>And many others with ML model training</li>
+                            </ul>
+
+                            <h3>Key Features</h3>
+                            <ul class="features-list">
+                                <li>✓ Scanner source identification</li>
+                                <li>✓ Tampering detection</li>
+                                <li>✓ Forensic indicator analysis</li>
+                                <li>✓ Batch processing support</li>
+                                <li>✓ Report generation</li>
+                                <li>✓ REST API integration</li>
+                                <li>✓ Historical analysis tracking</li>
+                                <li>✓ Document comparison</li>
+                            </ul>
+                        </div>
+
+                        <div class="about-stats">
+                            <div class="stat-card">
+                                <div class="stat-number" id="totalAnalysisCount">0</div>
+                                <div class="stat-label">Total Analyses</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="averageConfidenceStats">0%</div>
+                                <div class="stat-label">Avg Confidence</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="successRateStats">0%</div>
+                                <div class="stat-label">Success Rate</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Help Section -->
+            <section id="help" class="help-section" style="display:none;">
+                <div class="help-container">
+                    <h2>Help & Documentation</h2>
+
+                    <div class="help-content">
+                        <div class="faq-section">
+                            <h3>Frequently Asked Questions</h3>
+                            
+                            <div class="faq-item">
+                                <h4>How does scanner identification work?</h4>
+                                <p>AI TraceFinder uses advanced forensic techniques including PRNU (Photo Response Non-Uniformity) analysis, FFT (frequency domain) analysis, and machine learning to identify unique signatures present in images from different scanners/cameras.</p>
+                            </div>
+
+                            <div class="faq-item">
+                                <h4>What image formats are supported?</h4>
+                                <p>Supported formats include JPG, JPEG, PNG, TIFF, BMP, and GIF. Images are analyzed at their native resolution, though very large images may be resized for performance.</p>
+                            </div>
+
+                            <div class="faq-item">
+                                <h4>How accurate is the analysis?</h4>
+                                <p>Accuracy depends on image quality and the scanner model database. Typical confidence scores range from 0.5 (uncertain) to 0.99 (very confident). Our system has been tested with 90%+ accuracy on known scanner types.</p>
+                            </div>
+
+                            <div class="faq-item">
+                                <h4>Can it detect image tampering?</h4>
+                                <p>Yes! TraceFinder analyzes forensic indicators including compression artifacts, unusual patterns, channel mismatches, and other signs of potential image manipulation.</p>
+                            </div>
+
+                            <div class="faq-item">
+                                <h4>Is there a file size limit?</h4>
+                                <p>The maximum file size is 50MB. For best performance, we recommend using images under 10MB. Analysis typically takes 0.08-0.5 seconds per image.</p>
+                            </div>
+
+                            <div class="faq-item">
+                                <h4>Can I analyze multiple images at once?</h4>
+                                <p>Yes! Use the Batch Upload feature to analyze up to 10 images simultaneously. Results are shown in an organized table format.</p>
+                            </div>
+                        </div>
+
+                        <div class="usage-guide">
+                            <h3>Quick Start Guide</h3>
+                            <ol class="guide-steps">
+                                <li><strong>Upload Image:</strong> Navigate to Analyze tab and upload or drag-drop an image</li>
+                                <li><strong>Wait for Analysis:</strong> The system will extract features and identify the scanner (takes ~0.08-0.5 seconds)</li>
+                                <li><strong>Review Results:</strong> Check the identified scanner, confidence score, and forensic indicators</li>
+                                <li><strong>Download Report:</strong> Export results as JSON or HTML report for documentation</li>
+                                <li><strong>Track History:</strong> All analyses are automatically saved in the History section</li>
+                            </ol>
+                        </div>
+
+                        <div class="api-guide">
+                            <h3>API Documentation</h3>
+                            <p>Full REST API documentation is available. Click the API link in the navigation to view all endpoints, parameters, and example responses.</p>
+                            <button class="btn btn-secondary" id="helpApiDocsBtn">View API Docs</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Information Section -->
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; 2026 AI TraceFinder. Advanced Image Forensics System.</p>
+                <div class="footer-links">
+                    <a href="#" id="apiDocsFooter">API Documentation</a>
+                    <a href="#" id="aboutLink">About</a>
+                    <a href="#" id="contactLink">Contact</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- API Documentation Modal -->
+    <div id="apiModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2>API Documentation</h2>
+            <div id="apiDocContent"></div>
+        </div>
+    </div>
+
+    <!-- Error Toast -->
+    <div id="errorToast" class="toast error-toast" style="display:none;">
+        <span id="errorMessage"></span>
+        <button class="toast-close">&times;</button>
+    </div>
+
+    <!-- Success Toast -->
+    <div id="successToast" class="toast success-toast" style="display:none;">
+        <span id="successMessage"></span>
+        <button class="toast-close">&times;</button>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p id="loadingText">Processing...</p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
