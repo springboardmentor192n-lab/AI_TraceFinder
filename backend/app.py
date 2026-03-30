@@ -11,14 +11,14 @@ import time
 from werkzeug.utils import secure_filename
 import numpy as np
 import cv2
-import joblib
+import joblib  # type: ignore
 from image_forensics import ImageForensics
 import traceback
 import atexit
 import glob
 from datetime import datetime, timedelta
 import json
-from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 # Get absolute paths for static and template folders
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -41,22 +41,22 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
 # Initialize Image Forensics Engine (for fallback features)
-forensics_engine = ImageForensics()
+forensics_engine: ImageForensics = ImageForensics()
 
 # History storage file
-HISTORY_FILE = os.path.join(BASE_DIR, 'backend', 'analysis_history.json')
+HISTORY_FILE: str = os.path.join(BASE_DIR, 'backend', 'analysis_history.json')
 
-def load_history():
+def load_history() -> List[Dict[str, Any]]:
     """Load analysis history from file"""
     if os.path.exists(HISTORY_FILE):
         try:
             with open(HISTORY_FILE, 'r') as f:
                 return json.load(f)
-        except:
+        except Exception:
             return []
     return []
 
-def save_history(history):
+def save_history(history: List[Dict[str, Any]]) -> None:
     """Save analysis history to file"""
     try:
         with open(HISTORY_FILE, 'w') as f:
@@ -64,10 +64,10 @@ def save_history(history):
     except Exception as e:
         print(f"Error saving history: {e}")
 
-def add_to_history(filename, scanner_id, confidence, image_info):
+def add_to_history(filename: str, scanner_id: str, confidence: Union[float, int], image_info: Dict[str, Any]) -> None:
     """Add analysis result to history"""
     try:
-        history = load_history()
+        history: List[Dict[str, Any]] = load_history()
         history.insert(0, {
             'timestamp': datetime.now().isoformat(),
             'filename': filename,
@@ -85,47 +85,49 @@ def add_to_history(filename, scanner_id, confidence, image_info):
 # ============================================
 # ML Model Loading (V2 with fallback to V1)
 # ============================================
-MODEL_PATH_V2 = os.path.join(os.path.dirname(__file__), "scanner_model_v2.pkl")
-SCALER_PATH_V2 = os.path.join(os.path.dirname(__file__), "feature_scaler_v2.pkl")
-CLASSES_MAPPING_PATH_V2 = os.path.join(os.path.dirname(__file__), "classes_mapping_v2.pkl")
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "scanner_model.pkl")
-CLASSES_MAPPING_PATH = os.path.join(os.path.dirname(__file__), "classes_mapping.pkl")
+MODEL_PATH_V2: str = os.path.join(os.path.dirname(__file__), "scanner_model_v2.pkl")
+SCALER_PATH_V2: str = os.path.join(os.path.dirname(__file__), "feature_scaler_v2.pkl")
+CLASSES_MAPPING_PATH_V2: str = os.path.join(os.path.dirname(__file__), "classes_mapping_v2.pkl")
+MODEL_PATH: str = os.path.join(os.path.dirname(__file__), "scanner_model.pkl")
+CLASSES_MAPPING_PATH: str = os.path.join(os.path.dirname(__file__), "classes_mapping.pkl")
 
-ml_model = None
-ml_scaler = None
-classes_mapping = None
-model_enabled = False
-model_version = None  # 'v1' or 'v2'
+ml_model: Optional[Any] = None
+ml_scaler: Optional[Any] = None
+classes_mapping: Optional[Dict[int, str]] = None
+model_enabled: bool = False
+model_version: Optional[str] = None  # 'v1' or 'v2'
 
-def load_ml_model():
+def load_ml_model() -> None:
     """Load trained ML model and classes mapping on startup. Tries V2 first, then V1."""
     global ml_model, ml_scaler, classes_mapping, model_enabled, model_version
-    
+
     # Try V2 model first
     try:
         if (os.path.exists(MODEL_PATH_V2) and
             os.path.exists(SCALER_PATH_V2) and
             os.path.exists(CLASSES_MAPPING_PATH_V2)):
-            ml_model = joblib.load(MODEL_PATH_V2)
-            ml_scaler = joblib.load(SCALER_PATH_V2)
-            classes_mapping = joblib.load(CLASSES_MAPPING_PATH_V2)
+            ml_model = joblib.load(MODEL_PATH_V2)  # type: ignore
+            ml_scaler = joblib.load(SCALER_PATH_V2)  # type: ignore
+            classes_mapping = joblib.load(CLASSES_MAPPING_PATH_V2)  # type: ignore
             model_enabled = True
             model_version = 'v2'
             print(f"✓ ML Model V2 (Hybrid Ensemble) loaded successfully")
-            print(f"✓ Classes: {list(classes_mapping.values())}")
+            if classes_mapping is not None:
+                print(f"✓ Classes: {list(classes_mapping.values())}")
             return
     except Exception as e:
         print(f"⚠️  V2 model load failed: {str(e)}")
-    
+
     # Fallback to V1
     try:
         if os.path.exists(MODEL_PATH) and os.path.exists(CLASSES_MAPPING_PATH):
-            ml_model = joblib.load(MODEL_PATH)
-            classes_mapping = joblib.load(CLASSES_MAPPING_PATH)
+            ml_model = joblib.load(MODEL_PATH)  # type: ignore
+            classes_mapping = joblib.load(CLASSES_MAPPING_PATH)  # type: ignore
             model_enabled = True
             model_version = 'v1'
             print(f"✓ ML Model V1 (RandomForest) loaded successfully")
-            print(f"✓ Classes: {list(classes_mapping.values())}")
+            if classes_mapping is not None:
+                print(f"✓ Classes: {list(classes_mapping.values())}")
         else:
             print(f"⚠️  No ML Model found. Using rule-based forensics engine.")
             print(f"   To train: python backend/train_model_v2.py")
@@ -139,31 +141,31 @@ def load_ml_model():
 load_ml_model()
 
 
-def cleanup_old_files():
+def cleanup_old_files() -> None:
     """
     Clean up uploaded files older than FILE_CLEANUP_HOURS
     Prevents disk space issues from accumulated uploads
     """
     try:
-        cutoff_time = datetime.now() - timedelta(hours=FILE_CLEANUP_HOURS)
+        cutoff_time: datetime = datetime.now() - timedelta(hours=FILE_CLEANUP_HOURS)
         for filepath in glob.glob(os.path.join(UPLOAD_FOLDER, '*')):
             if os.path.isfile(filepath):
-                file_time = datetime.fromtimestamp(os.path.getmtime(filepath))
+                file_time: datetime = datetime.fromtimestamp(os.path.getmtime(filepath))
                 if file_time < cutoff_time:
                     os.remove(filepath)
     except Exception as e:
         app.logger.warning(f"Cleanup error: {str(e)}")
 
-def allowed_file(filename):
+def allowed_file(filename: str) -> bool:
     """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def preprocess_image_for_ml(image_path):
+def preprocess_image_for_ml(image_path: str) -> Optional[np.ndarray]:
     """
     Preprocess image for ML model prediction.
     For V2: extracts multi-scale features using train_model_v2 pipeline.
     For V1: simple grayscale flatten.
-    
+
     Returns:
         features: 1D array ready for ML model, or None on failure
     """
@@ -172,67 +174,68 @@ def preprocess_image_for_ml(image_path):
             # Use V2 multi-scale feature extraction
             try:
                 from train_model_v2 import extract_all_features
-                features = extract_all_features(image_path)
+                features: Optional[np.ndarray] = extract_all_features(image_path)  # type: ignore
                 return features
             except ImportError:
                 print("⚠️  V2 feature extractor not available, using V1")
-        
+
         # V1 fallback: simple grayscale flatten
-        image = cv2.imread(image_path)
+        image: Optional[np.ndarray] = cv2.imread(image_path)  # type: ignore
         if image is None:
             return None
-        
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        resized = cv2.resize(gray, (128, 128), interpolation=cv2.INTER_AREA)
-        flattened = resized.flatten().astype(np.float32) / 255.0
-        
+
+        gray: np.ndarray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # type: ignore
+        resized: np.ndarray = cv2.resize(gray, (128, 128), interpolation=cv2.INTER_AREA)  # type: ignore
+        flattened: np.ndarray = resized.flatten().astype(np.float32) / 255.0
+
         return flattened
     except Exception as e:
         print(f"Error preprocessing image: {str(e)}")
         return None
 
-def compute_feature_confidences(image_path):
+def compute_feature_confidences(image_path: str) -> Dict[str, Union[float, int]]:
     """
     Compute per-feature confidence scores for the frontend gauge display.
     Returns breakdown of PRNU, FFT, Texture confidence scores.
     """
     try:
-        image = cv2.imread(image_path)
+        image: Optional[np.ndarray] = cv2.imread(image_path)  # type: ignore
         if image is None:
             return {}
-        
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        resized = cv2.resize(gray, (128, 128), interpolation=cv2.INTER_AREA)
-        norm = resized.astype(np.float32) / 255.0
-        
-        from scipy.signal import wiener as wiener_filter
-        from scipy import ndimage as ndi
-        from scipy.fft import fft2 as fft2_func, fftshift as fftshift_func
-        
+
+        gray: np.ndarray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # type: ignore
+        resized: np.ndarray = cv2.resize(gray, (128, 128), interpolation=cv2.INTER_AREA)  # type: ignore
+        norm: np.ndarray = resized.astype(np.float32) / 255.0
+
+        from scipy.signal import wiener as wiener_filter  # type: ignore
+        from scipy import ndimage as ndi  # type: ignore
+        from scipy.fft import fft2 as fft2_func, fftshift as fftshift_func  # type: ignore
+
         # PRNU confidence: based on residual noise consistency
         try:
-            denoised = wiener_filter(norm, mysize=(5, 5))
+            denoised: np.ndarray = wiener_filter(norm, mysize=(5, 5))  # type: ignore
         except Exception:
-            denoised = cv2.GaussianBlur(norm, (5, 5), 0)
-        residual = norm - denoised
-        prnu_std = float(np.std(residual))
-        prnu_conf = min(1.0, max(0.3, 1.0 - abs(prnu_std - 0.05) / 0.15))
-        
+            denoised = cv2.GaussianBlur(norm, (5, 5), 0)  # type: ignore
+        residual: np.ndarray = norm - denoised
+        prnu_std: float = float(np.std(residual))
+        prnu_conf: float = min(1.0, max(0.3, 1.0 - abs(prnu_std - 0.05) / 0.15))
+
         # FFT confidence: based on spectral energy concentration
-        fft_img = np.abs(fft2_func(norm))
-        fft_img = fftshift_func(fft_img)
-        total_energy = np.sum(fft_img)
-        top_energy = np.sum(fft_img[fft_img > np.percentile(fft_img, 90)])
-        fft_ratio = float(top_energy / (total_energy + 1e-8))
-        fft_conf = min(1.0, max(0.3, fft_ratio * 2.5))
-        
+        fft_result: np.ndarray = fft2_func(norm)  # type: ignore
+        fft_img: np.ndarray = np.abs(fft_result)
+        fft_img = fftshift_func(fft_img)  # type: ignore
+        total_energy: Union[np.floating[Any], float] = np.sum(fft_img)
+        top_energy: Union[np.floating[Any], float] = np.sum(fft_img[fft_img > np.percentile(fft_img, 90)])
+        fft_ratio: float = float(top_energy / (total_energy + 1e-8))
+        fft_conf: float = min(1.0, max(0.3, fft_ratio * 2.5))
+
         # Texture confidence: based on edge coherence
-        grad_x = ndi.sobel(norm, axis=1)
-        grad_y = ndi.sobel(norm, axis=0)
-        grad_mag = np.sqrt(grad_x**2 + grad_y**2)
-        edge_coherence = 1.0 - float(np.std(grad_mag) / (np.mean(grad_mag) + 1e-8))
-        texture_conf = min(1.0, max(0.3, edge_coherence))
-        
+        grad_x: np.ndarray = ndi.sobel(norm, axis=1)  # type: ignore
+        grad_y: np.ndarray = ndi.sobel(norm, axis=0)  # type: ignore
+        grad_mag: np.ndarray = np.sqrt(grad_x**2 + grad_y**2)
+        edge_coherence: float = 1.0 - float(np.std(grad_mag) / (np.mean(grad_mag) + 1e-8))
+        texture_conf: float = min(1.0, max(0.3, edge_coherence))
+
         return {
             'prnu_confidence': round(prnu_conf, 3),
             'fft_confidence': round(fft_conf, 3),
@@ -272,58 +275,58 @@ def analyze_image():
         # Check if file is provided
         if 'image' not in request.files:
             return jsonify({'error': 'No image file provided'}), 400
-        
+
         file = request.files['image']
-        
-        if file.filename == '':
+
+        if not file.filename or file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
-        
-        if not allowed_file(file.filename):
+
+        if not allowed_file(file.filename):  # type: ignore
             return jsonify({'error': f'File type not allowed. Allowed: {", ".join(ALLOWED_EXTENSIONS)}'}), 400
-        
+
         # Save uploaded file
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        filename: str = secure_filename(file.filename)  # type: ignore
+        filepath: str = os.path.join(app.config['UPLOAD_FOLDER'], filename)  # type: ignore
         file.save(filepath)
-        
+
         # Check if ML model is available
         if model_enabled and ml_model is not None and classes_mapping is not None:
             try:
                 t_start = time.time()
-                
+
                 # Preprocess image for ML model
                 preprocessed = preprocess_image_for_ml(filepath)
-                
+
                 if preprocessed is None:
                     return jsonify({
                         'success': False,
                         'error': 'Could not process image file'
                     }), 400
-                
+
                 # Apply scaler for V2 model
                 if model_version == 'v2' and ml_scaler is not None:
                     preprocessed_scaled = ml_scaler.transform([preprocessed])[0]
                 else:
                     preprocessed_scaled = preprocessed
-                
+
                 # Get prediction from ML model
                 prediction = ml_model.predict([preprocessed_scaled])[0]
                 probabilities = ml_model.predict_proba([preprocessed_scaled])[0]
-                
+
                 # Get predicted class name
                 predicted_class = classes_mapping[prediction]
-                
+
                 # Calculate confidence as the max probability
                 confidence = float(np.max(probabilities))
-                
+
                 # Compute per-feature confidence breakdown
                 feature_confidences = compute_feature_confidences(filepath)
-                
+
                 t_elapsed = time.time() - t_start
-                
+
                 # Save to history
                 add_to_history(filename, predicted_class, confidence, {'shape': [128, 128]})
-                
+
                 return jsonify({
                     'success': True,
                     'data': {
@@ -351,7 +354,7 @@ def analyze_image():
                         'recommendations': []
                     }
                 }), 200
-                
+
             except Exception as e:
                 print(f"ML Model prediction error: {str(e)}")
                 print(f"Falling back to forensics engine")
@@ -359,50 +362,55 @@ def analyze_image():
                 use_ml = False
         else:
             use_ml = False
-        
+
         # Fallback to forensics engine if ML model is not available
         if not model_enabled or not use_ml:
-            results = forensics_engine.analyze_image(filepath)
-            
-            if results['success']:
+            results: Dict[str, Any] = forensics_engine.analyze_image(filepath)  # type: ignore
+
+            if results.get('success', False):  # type: ignore
                 # Ensure all values are JSON serializable (convert numpy types)
-                def convert_to_native(obj):
+                def convert_to_native(obj: Any) -> Any:
                     """Convert numpy types to native Python types"""
                     if isinstance(obj, np.ndarray):
-                        return obj.tolist()
+                        return obj.tolist()  # type: ignore
                     elif isinstance(obj, (np.integer, np.floating)):
-                        return float(obj) if isinstance(obj, np.floating) else int(obj)
+                        return float(obj) if isinstance(obj, np.floating) else int(obj)  # type: ignore
                     elif isinstance(obj, np.bool_):
-                        return bool(obj)
+                        return bool(obj)  # type: ignore
                     elif isinstance(obj, dict):
-                        return {k: convert_to_native(v) for k, v in obj.items()}
+                        return {str(k): convert_to_native(v) for k, v in obj.items()}  # type: ignore
                     elif isinstance(obj, (list, tuple)):
-                        return [convert_to_native(v) for v in obj]
+                        return [convert_to_native(v) for v in obj]  # type: ignore
                     return obj
-                
+
                 # Save to history
-                add_to_history(filename, results['scanner_id'], results['confidence'], results.get('image_info', {}))
-                
+                scanner_id_str: str = str(results.get('scanner_id', 'Unknown') or 'Unknown')  # type: ignore
+                confidence_val: float = float(results.get('confidence', 0) or 0)  # type: ignore
+                image_info_data: Dict[str, Any] = (results.get('image_info', {}) or {})  # type: ignore
+                add_to_history(filename, scanner_id_str, confidence_val, image_info_data)
+
+                fv: Any = results.get('feature_vector')  # type: ignore
                 return jsonify({
                     'success': True,
                     'data': {
-                        'scanner_id': results['scanner_id'],
-                        'confidence': float(results['confidence']),
-                        'feature_vector': results['feature_vector'].tolist() if isinstance(results.get('feature_vector'), np.ndarray) else [],
-                        'noise_pattern_strength': float(results.get('noise_pattern_strength', 0)),
-                        'image_info': convert_to_native(results.get('image_info', {})),
-                        'fft_analysis': convert_to_native(results.get('fft_analysis', {})),
-                        'texture_metrics': convert_to_native(results.get('texture_metrics', {})),
-                        'forensic_indicators': convert_to_native(results.get('forensic_indicators', {})),
-                        'recommendations': results.get('recommendations', [])
+                        'scanner_id': scanner_id_str,
+                        'confidence': confidence_val,
+                        'feature_vector': fv.tolist() if isinstance(fv, np.ndarray) else [],  # type: ignore
+                        'noise_pattern_strength': float(results.get('noise_pattern_strength', 0) or 0),  # type: ignore
+                        'image_info': convert_to_native(results.get('image_info', {}) or {}),  # type: ignore
+                        'fft_analysis': convert_to_native(results.get('fft_analysis', {}) or {}),  # type: ignore
+                        'texture_metrics': convert_to_native(results.get('texture_metrics', {}) or {}),  # type: ignore
+                        'forensic_indicators': convert_to_native(results.get('forensic_indicators', {}) or {}),  # type: ignore
+                        'recommendations': results.get('recommendations', []) or []  # type: ignore
                     }
                 }), 200
             else:
+                error_msg: str = str(results.get('error', 'Unknown error during analysis') or 'Unknown error')  # type: ignore
                 return jsonify({
                     'success': False,
-                    'error': results.get('error', 'Unknown error during analysis')
+                    'error': error_msg
                 }), 400
-            
+
     except Exception as e:
         return jsonify({
             'success': False,
@@ -419,63 +427,65 @@ def batch_analyze():
     try:
         if 'images' not in request.files:
             return jsonify({'error': 'No images provided'}), 400
-        
+
         files = request.files.getlist('images')
         results = []
-        
+
         for file in files:
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                
-                # Try ML model first
-                if model_enabled and ml_model is not None and classes_mapping is not None:
-                    try:
-                        preprocessed = preprocess_image_for_ml(filepath)
-                        if preprocessed is not None:
-                            prediction = ml_model.predict([preprocessed])[0]
-                            probabilities = ml_model.predict_proba([preprocessed])[0]
-                            predicted_class = classes_mapping[prediction]
-                            confidence = float(np.max(probabilities))
-                            
-                            results.append({
-                                'filename': filename,
-                                'success': True,
-                                'scanner_id': predicted_class,
-                                'confidence': confidence
-                            })
-                            continue
-                    except Exception as e:
-                        print(f"ML Model error for {filename}: {str(e)}")
-                
-                # Fallback to forensics engine
-                result = forensics_engine.analyze_image(filepath)
-                results.append({
-                    'filename': filename,
-                    'success': result['success'],
-                    'scanner_id': result.get('scanner_id', 'Unknown'),
-                    'confidence': float(result.get('confidence', 0))
-                })
-        
+            if file and file.filename:
+                filename_str: str = str(file.filename)
+                if allowed_file(filename_str):  # type: ignore
+                    filename: str = secure_filename(filename_str)  # type: ignore
+                    filepath: str = os.path.join(app.config['UPLOAD_FOLDER'], filename)  # type: ignore
+                    file.save(filepath)
+
+                    # Try ML model first
+                    if model_enabled and ml_model is not None and classes_mapping is not None:
+                        try:
+                            preprocessed = preprocess_image_for_ml(filepath)
+                            if preprocessed is not None:
+                                prediction = ml_model.predict([preprocessed])[0]  # type: ignore
+                                probabilities = ml_model.predict_proba([preprocessed])[0]  # type: ignore
+                                predicted_class = classes_mapping[prediction]  # type: ignore
+                                confidence = float(np.max(probabilities))
+
+                                results.append({  # type: ignore
+                                    'filename': filename,
+                                    'success': True,
+                                    'scanner_id': predicted_class,
+                                    'confidence': confidence
+                                })
+                                continue
+                        except Exception as e:
+                            print(f"ML Model error for {filename}: {str(e)}")
+
+                    # Fallback to forensics engine
+                    result: Dict[str, Any] = forensics_engine.analyze_image(filepath)  # type: ignore
+                    results.append({  # type: ignore
+                        'filename': filename,
+                        'success': result.get('success', False),  # type: ignore
+                        'scanner_id': str(result.get('scanner_id', 'Unknown') or 'Unknown'),  # type: ignore
+                        'confidence': float(result.get('confidence', 0) or 0)  # type: ignore
+                    })
+
         return jsonify({
             'success': True,
-            'total': len(results),
-            'analyzed': len([r for r in results if r['success']]),
+            'total': len(results),  # type: ignore
+            'analyzed': len([r for r in results if r.get('success', False)]),  # type: ignore
             'results': results
         }), 200
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
             'error': f'Batch analysis error: {str(e)}'
         }), 500
 
-@app.route('/api/statistics', methods=['GET'])
-def get_statistics():
+@app.route('/api/statistics', methods=['GET'])  # type: ignore
+def get_statistics() -> Any:
     """Get system statistics and scanner database info"""
     try:
-        stats = forensics_engine.get_statistics()
+        stats: Dict[str, Any] = forensics_engine.get_statistics()  # type: ignore
         return jsonify({
             'success': True,
             'statistics': stats
@@ -486,10 +496,10 @@ def get_statistics():
             'error': str(e)
         }), 500
 
-@app.route('/api/extractors', methods=['GET'])
-def get_extractors():
+@app.route('/api/extractors', methods=['GET'])  # type: ignore
+def get_extractors() -> Any:
     """Get available feature extractors information"""
-    extractors = {
+    extractors: Dict[str, str] = {
         'PRNU': 'Photo Response Non-Uniformity - Camera noise pattern analysis',
         'FFT': 'Fast Fourier Transform - Frequency domain analysis',
         'LBP': 'Local Binary Pattern - Texture feature extraction',
@@ -500,10 +510,10 @@ def get_extractors():
     }
     return jsonify({'extractors': extractors}), 200
 
-@app.route('/api/docs', methods=['GET'])
-def get_docs():
+@app.route('/api/docs', methods=['GET'])  # type: ignore
+def get_docs() -> Any:
     """Get API documentation - Returns JSON for programmatic access"""
-    docs = {
+    docs: Dict[str, Any] = {
         'title': 'AI TraceFinder API Documentation',
         'version': '1.0.0',
         'endpoints': [
@@ -543,10 +553,10 @@ def get_docs():
     }
     return jsonify(docs), 200
 
-@app.route('/api/docs-html', methods=['GET'])
-def get_docs_html():
+@app.route('/api/docs-html', methods=['GET'])  # type: ignore
+def get_docs_html() -> Any:
     """Get API documentation as HTML for browser viewing"""
-    html = """
+    html: str = """
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -810,30 +820,30 @@ def get_docs_html():
     """
     return html, 200
 
-@app.route('/api/history', methods=['GET'])
-def get_analysis_history():
+@app.route('/api/history', methods=['GET'])  # type: ignore
+def get_analysis_history() -> Any:
     """Get analysis history"""
     try:
-        history = load_history()
-        
+        history: List[Dict[str, Any]] = load_history()
+
         # Filter by scanner if provided
-        scanner_filter = request.args.get('scanner', '')
+        scanner_filter: str = request.args.get('scanner', '')
         if scanner_filter:
             history = [h for h in history if h.get('scanner_id') == scanner_filter]
-        
+
         # Sort
-        sort_by = request.args.get('sort', 'latest')
+        sort_by: str = request.args.get('sort', 'latest')
         if sort_by == 'confidence':
             history = sorted(history, key=lambda x: x.get('confidence', 0), reverse=True)
         elif sort_by == 'oldest':
             history = sorted(history, key=lambda x: x.get('timestamp', ''), reverse=False)
-        
+
         return jsonify({'success': True, 'history': history}), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/history', methods=['DELETE'])
-def clear_history():
+@app.route('/api/history', methods=['DELETE'])  # type: ignore
+def clear_history() -> Any:
     """Clear analysis history"""
     try:
         save_history([])
@@ -841,22 +851,22 @@ def clear_history():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/report', methods=['POST'])
-def generate_report():
+@app.route('/api/report', methods=['POST'])  # type: ignore
+def generate_report() -> Any:
     """Generate analysis report in HTML format"""
     try:
-        data = request.get_json()
-        
+        data: Optional[Dict[str, Any]] = request.get_json()  # type: ignore
+
         if not data:
             return jsonify({'success': False, 'error': 'No data provided'}), 400
-        
-        scanner_id = data.get('scanner_id', 'Unknown')
-        confidence = data.get('confidence', 0)
-        image_info = data.get('image_info', {})
-        forensic_indicators = data.get('forensic_indicators', {})
-        fft_analysis = data.get('fft_analysis', {})
-        texture_metrics = data.get('texture_metrics', {})
-        
+
+        scanner_id: str = str(data.get('scanner_id', 'Unknown'))
+        confidence: Union[float, int] = float(data.get('confidence', 0))  # type: ignore
+        image_info: Dict[str, Any] = data.get('image_info', {})
+        forensic_indicators: Dict[str, Any] = data.get('forensic_indicators', {})
+        fft_analysis: Dict[str, Any] = data.get('fft_analysis', {})
+        texture_metrics: Dict[str, Any] = data.get('texture_metrics', {})
+
         # Generate HTML report
         report_html = f"""
         <!DOCTYPE html>
@@ -963,41 +973,41 @@ def generate_report():
         </body>
         </html>
         """
-        
-        return report_html, 200, {'Content-Type': 'text/html'}
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/compare', methods=['POST'])
-def compare_analyses():
+        return report_html, 200, {'Content-Type': 'text/html'}  # type: ignore
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500  # type: ignore
+
+@app.route('/api/compare', methods=['POST'])  # type: ignore
+def compare_analyses() -> Any:
     """Compare multiple analysis results"""
     try:
-        data = request.get_json()
-        analysis_indices = data.get('indices', [])
-        
-        history = load_history()
-        
+        data: Optional[Dict[str, Any]] = request.get_json()  # type: ignore
+        analysis_indices: List[int] = data.get('indices', []) if data else []
+
+        history: List[Dict[str, Any]] = load_history()
+
         # Get specified analyses
-        comparisons = []
+        comparisons: List[Dict[str, Any]] = []
         for idx in analysis_indices:
             if 0 <= idx < len(history):
                 comparisons.append(history[idx])
-        
+
         if not comparisons:
             return jsonify({'success': False, 'error': 'No analyses found'}), 400
-        
+
         # Calculate comparison summary
-        scanners = [c.get('scanner_id') for c in comparisons]
-        confidences = [c.get('confidence', 0) for c in comparisons]
-        
-        summary = {
+        scanners: List[Any] = [c.get('scanner_id') for c in comparisons]
+        confidences: List[Any] = [c.get('confidence', 0) for c in comparisons]
+
+        summary: Dict[str, Any] = {
             'total_compared': len(comparisons),
             'scanner_models': scanners,
-            'average_confidence': float(np.mean(confidences)) if confidences else 0,
+            'average_confidence': float(np.mean(confidences)) if confidences else 0,  # type: ignore
             'confidence_range': f"{min(confidences):.2f} - {max(confidences):.2f}" if confidences else "N/A",
             'same_scanner': len(set(scanners)) == 1
         }
-        
+
         return jsonify({
             'success': True,
             'comparisons': comparisons,
@@ -1006,15 +1016,15 @@ def compare_analyses():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.errorhandler(404)
-def not_found(error):
+@app.errorhandler(404)  # type: ignore
+def not_found(error: Exception) -> Any:  # type: ignore
     """Handle 500 errors"""
     return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
     # Register cleanup function to run on exit
     atexit.register(cleanup_old_files)
-    
+
     print("\n" + "="*60)
     print("AI TraceFinder - Backend Server Starting")
     print("="*60)
@@ -1023,6 +1033,6 @@ if __name__ == '__main__':
     print("Flask Server: http://localhost:5000")
     print("API Documentation: http://localhost:5000/api/docs")
     print("="*60 + "\n")
-    
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
