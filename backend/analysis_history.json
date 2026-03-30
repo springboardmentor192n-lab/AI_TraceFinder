@@ -1,5 +1,27 @@
 [
   {
+    "timestamp": "2026-03-30T17:58:39.493558",
+    "filename": "s2_1.tif",
+    "scanner_id": "Canon9000-2",
+    "confidence": 0.16416666666666666,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
+    "timestamp": "2026-03-30T17:50:32.759931",
+    "filename": "s2_1.tif",
+    "scanner_id": "Canon9000-2",
+    "confidence": 0.16416666666666668,
+    "dimensions": [
+      128,
+      128
+    ],
+    "status": "success"
+  },
+  {
     "timestamp": "2026-03-13T13:12:38.728864",
     "filename": "s10_1.tif",
     "scanner_id": "EpsonV370-1",
