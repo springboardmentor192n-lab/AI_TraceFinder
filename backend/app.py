@@ -1,11 +1,13 @@
 """
-AI TraceFinder Backend - Flask Application
+AI TraceFinder Backend - Flask Application v2
 Machine Learning-based Scanner Source Identification System
+Supports V2 hybrid ensemble model with multi-scale features
 """
 
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import os
+import time
 from werkzeug.utils import secure_filename
 import numpy as np
 import cv2
@@ -81,29 +83,52 @@ def add_to_history(filename, scanner_id, confidence, image_info):
         print(f"Error adding to history: {e}")
 
 # ============================================
-# ML Model Loading
+# ML Model Loading (V2 with fallback to V1)
 # ============================================
+MODEL_PATH_V2 = os.path.join(os.path.dirname(__file__), "scanner_model_v2.pkl")
+SCALER_PATH_V2 = os.path.join(os.path.dirname(__file__), "feature_scaler_v2.pkl")
+CLASSES_MAPPING_PATH_V2 = os.path.join(os.path.dirname(__file__), "classes_mapping_v2.pkl")
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "scanner_model.pkl")
 CLASSES_MAPPING_PATH = os.path.join(os.path.dirname(__file__), "classes_mapping.pkl")
 
 ml_model = None
+ml_scaler = None
 classes_mapping = None
 model_enabled = False
+model_version = None  # 'v1' or 'v2'
 
 def load_ml_model():
-    """Load trained ML model and classes mapping on startup"""
-    global ml_model, classes_mapping, model_enabled
+    """Load trained ML model and classes mapping on startup. Tries V2 first, then V1."""
+    global ml_model, ml_scaler, classes_mapping, model_enabled, model_version
     
+    # Try V2 model first
+    try:
+        if (os.path.exists(MODEL_PATH_V2) and
+            os.path.exists(SCALER_PATH_V2) and
+            os.path.exists(CLASSES_MAPPING_PATH_V2)):
+            ml_model = joblib.load(MODEL_PATH_V2)
+            ml_scaler = joblib.load(SCALER_PATH_V2)
+            classes_mapping = joblib.load(CLASSES_MAPPING_PATH_V2)
+            model_enabled = True
+            model_version = 'v2'
+            print(f"✓ ML Model V2 (Hybrid Ensemble) loaded successfully")
+            print(f"✓ Classes: {list(classes_mapping.values())}")
+            return
+    except Exception as e:
+        print(f"⚠️  V2 model load failed: {str(e)}")
+    
+    # Fallback to V1
     try:
         if os.path.exists(MODEL_PATH) and os.path.exists(CLASSES_MAPPING_PATH):
             ml_model = joblib.load(MODEL_PATH)
             classes_mapping = joblib.load(CLASSES_MAPPING_PATH)
             model_enabled = True
-            print(f"✓ ML Model loaded successfully")
+            model_version = 'v1'
+            print(f"✓ ML Model V1 (RandomForest) loaded successfully")
             print(f"✓ Classes: {list(classes_mapping.values())}")
         else:
-            print(f"⚠️  ML Model not found. Using rule-based forensics engine.")
-            print(f"   To train the model, run: python backend/train_model.py")
+            print(f"⚠️  No ML Model found. Using rule-based forensics engine.")
+            print(f"   To train: python backend/train_model_v2.py")
             model_enabled = False
     except Exception as e:
         print(f"⚠️  Failed to load ML model: {str(e)}")
@@ -135,38 +160,90 @@ def allowed_file(filename):
 
 def preprocess_image_for_ml(image_path):
     """
-    Preprocess image for ML model prediction
-    - Load image
-    - Resize to 128x128
-    - Convert to grayscale
-    - Flatten to 1D array
-    - Normalize to [0, 1]
+    Preprocess image for ML model prediction.
+    For V2: extracts multi-scale features using train_model_v2 pipeline.
+    For V1: simple grayscale flatten.
     
-    Args:
-        image_path: Path to image file
-        
     Returns:
-        flattened: 1D array ready for ML model
+        features: 1D array ready for ML model, or None on failure
     """
     try:
-        # Load image
+        if model_version == 'v2':
+            # Use V2 multi-scale feature extraction
+            try:
+                from train_model_v2 import extract_all_features
+                features = extract_all_features(image_path)
+                return features
+            except ImportError:
+                print("⚠️  V2 feature extractor not available, using V1")
+        
+        # V1 fallback: simple grayscale flatten
         image = cv2.imread(image_path)
         if image is None:
             return None
         
-        # Convert to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        
-        # Resize to 128x128
         resized = cv2.resize(gray, (128, 128), interpolation=cv2.INTER_AREA)
-        
-        # Flatten to 1D array
         flattened = resized.flatten().astype(np.float32) / 255.0
         
         return flattened
     except Exception as e:
         print(f"Error preprocessing image: {str(e)}")
         return None
+
+def compute_feature_confidences(image_path):
+    """
+    Compute per-feature confidence scores for the frontend gauge display.
+    Returns breakdown of PRNU, FFT, Texture confidence scores.
+    """
+    try:
+        image = cv2.imread(image_path)
+        if image is None:
+            return {}
+        
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        resized = cv2.resize(gray, (128, 128), interpolation=cv2.INTER_AREA)
+        norm = resized.astype(np.float32) / 255.0
+        
+        from scipy.signal import wiener as wiener_filter
+        from scipy import ndimage as ndi
+        from scipy.fft import fft2 as fft2_func, fftshift as fftshift_func
+        
+        # PRNU confidence: based on residual noise consistency
+        try:
+            denoised = wiener_filter(norm, mysize=(5, 5))
+        except Exception:
+            denoised = cv2.GaussianBlur(norm, (5, 5), 0)
+        residual = norm - denoised
+        prnu_std = float(np.std(residual))
+        prnu_conf = min(1.0, max(0.3, 1.0 - abs(prnu_std - 0.05) / 0.15))
+        
+        # FFT confidence: based on spectral energy concentration
+        fft_img = np.abs(fft2_func(norm))
+        fft_img = fftshift_func(fft_img)
+        total_energy = np.sum(fft_img)
+        top_energy = np.sum(fft_img[fft_img > np.percentile(fft_img, 90)])
+        fft_ratio = float(top_energy / (total_energy + 1e-8))
+        fft_conf = min(1.0, max(0.3, fft_ratio * 2.5))
+        
+        # Texture confidence: based on edge coherence
+        grad_x = ndi.sobel(norm, axis=1)
+        grad_y = ndi.sobel(norm, axis=0)
+        grad_mag = np.sqrt(grad_x**2 + grad_y**2)
+        edge_coherence = 1.0 - float(np.std(grad_mag) / (np.mean(grad_mag) + 1e-8))
+        texture_conf = min(1.0, max(0.3, edge_coherence))
+        
+        return {
+            'prnu_confidence': round(prnu_conf, 3),
+            'fft_confidence': round(fft_conf, 3),
+            'texture_confidence': round(texture_conf, 3),
+            'prnu_strength': round(prnu_std, 5),
+            'fft_energy_ratio': round(fft_ratio, 5),
+            'edge_coherence': round(float(edge_coherence), 5),
+        }
+    except Exception as e:
+        print(f"Feature confidence error: {e}")
+        return {}
 
 
 @app.route('/')
@@ -180,7 +257,9 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'message': 'AI TraceFinder Backend is running',
-        'version': '1.0.0'
+        'version': '2.0.0',
+        'model_version': model_version or 'forensics-only',
+        'model_enabled': model_enabled,
     }), 200
 
 @app.route('/api/analyze', methods=['POST'])
@@ -210,6 +289,8 @@ def analyze_image():
         # Check if ML model is available
         if model_enabled and ml_model is not None and classes_mapping is not None:
             try:
+                t_start = time.time()
+                
                 # Preprocess image for ML model
                 preprocessed = preprocess_image_for_ml(filepath)
                 
@@ -219,15 +300,26 @@ def analyze_image():
                         'error': 'Could not process image file'
                     }), 400
                 
+                # Apply scaler for V2 model
+                if model_version == 'v2' and ml_scaler is not None:
+                    preprocessed_scaled = ml_scaler.transform([preprocessed])[0]
+                else:
+                    preprocessed_scaled = preprocessed
+                
                 # Get prediction from ML model
-                prediction = ml_model.predict([preprocessed])[0]
-                probabilities = ml_model.predict_proba([preprocessed])[0]
+                prediction = ml_model.predict([preprocessed_scaled])[0]
+                probabilities = ml_model.predict_proba([preprocessed_scaled])[0]
                 
                 # Get predicted class name
                 predicted_class = classes_mapping[prediction]
                 
                 # Calculate confidence as the max probability
                 confidence = float(np.max(probabilities))
+                
+                # Compute per-feature confidence breakdown
+                feature_confidences = compute_feature_confidences(filepath)
+                
+                t_elapsed = time.time() - t_start
                 
                 # Save to history
                 add_to_history(filename, predicted_class, confidence, {'shape': [128, 128]})
@@ -237,8 +329,10 @@ def analyze_image():
                     'data': {
                         'scanner_id': predicted_class,
                         'confidence': confidence,
-                        'feature_vector': preprocessed.tolist(),
-                        'noise_pattern_strength': 0.0,
+                        'model_version': model_version or 'v1',
+                        'inference_time_ms': round(t_elapsed * 1000, 1),
+                        'feature_confidences': feature_confidences,
+                        'noise_pattern_strength': feature_confidences.get('prnu_strength', 0.0),
                         'image_info': {
                             'shape': [128, 128],
                             'dtype': 'float32',
@@ -247,8 +341,12 @@ def analyze_image():
                                 for i in range(len(probabilities))
                             }
                         },
-                        'fft_analysis': {},
-                        'texture_metrics': {},
+                        'fft_analysis': {
+                            'energy_concentration': feature_confidences.get('fft_energy_ratio', 0.0),
+                        },
+                        'texture_metrics': {
+                            'edge_strength': feature_confidences.get('edge_coherence', 0.0),
+                        },
                         'forensic_indicators': {},
                         'recommendations': []
                     }

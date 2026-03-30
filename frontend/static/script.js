@@ -227,17 +227,31 @@ class AITraceFinder {
             analyzeBtn.disabled = true;
         }
 
-        this.showToast('🔍 Analyzing image...', 'info');
+        // Show step-by-step progress
+        this.showAnalysisProgress();
+        this.setProgressStep('upload');
 
         try {
+            // Step 1: Upload
+            await this.delay(300);
+            this.setProgressStep('preprocess');
+
             const response = await fetch(`${this.apiBaseUrl}/analyze`, {
                 method: 'POST',
                 body: formData
             });
 
+            // Step 2: Processing
+            this.setProgressStep('analyze');
+            await this.delay(200);
+
             const result = await response.json();
 
             if (result.success) {
+                // Step 3: Results
+                this.setProgressStep('result');
+                await this.delay(400);
+
                 this.currentAnalysis = result.data;
                 this.displayResults(result.data);
                 this.showToast('✓ Analysis complete!', 'success');
@@ -248,11 +262,16 @@ class AITraceFinder {
             this.showToast(`❌ Error: ${error.message}`, 'error');
             console.error('Analysis error:', error);
         } finally {
+            this.hideAnalysisProgress();
             if (analyzeBtn) {
                 analyzeBtn.classList.remove('loading');
                 analyzeBtn.disabled = false;
             }
         }
+    }
+
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     async performBatchAnalysis() {
@@ -322,6 +341,15 @@ class AITraceFinder {
         }
         if (confidenceText) confidenceText.textContent = confidence + '%';
 
+        // ========= ENHANCED UI: SVG Gauge =========
+        this.updateConfidenceGauge(data);
+
+        // ========= ENHANCED UI: Feature Confidence Bars =========
+        this.updateFeatureBars(data);
+
+        // ========= ENHANCED UI: Prediction Probabilities =========
+        this.updateProbabilityBreakdown(data);
+
         // Image Info
         if (data.image_info) {
             this.updateElementText('imageDim', `${data.image_info.shape?.[0] || '?'} × ${data.image_info.shape?.[1] || '?'}`);
@@ -347,7 +375,7 @@ class AITraceFinder {
             if (texture.edge_strength !== undefined) this.updateElementText('edgeStrength', parseFloat(texture.edge_strength).toFixed(4));
         }
 
-        // Noise Level (top-level field)
+        // Noise Level
         if (data.noise_pattern_strength !== undefined) {
             this.updateElementText('noiseLevel', parseFloat(data.noise_pattern_strength).toFixed(4));
         }
@@ -374,6 +402,202 @@ class AITraceFinder {
         if (resultsSection) {
             resultsSection.scrollIntoView({ behavior: 'smooth' });
         }
+    }
+
+    // ==================== ENHANCED UI METHODS ====================
+
+    updateConfidenceGauge(data) {
+        const confidence = data.confidence;
+        const percentage = Math.round(confidence * 100);
+        const circumference = 2 * Math.PI * 85; // r=85
+        const offset = circumference - (confidence * circumference);
+
+        // Update gauge fill
+        const gaugeFill = document.getElementById('gaugeFill');
+        if (gaugeFill) {
+            gaugeFill.setAttribute('stroke-dasharray', circumference.toString());
+            gaugeFill.setAttribute('stroke-dashoffset', circumference.toString());
+            
+            // Determine color class
+            gaugeFill.classList.remove('low', 'medium', 'high');
+            if (percentage < 50) gaugeFill.classList.add('low');
+            else if (percentage < 75) gaugeFill.classList.add('medium');
+            else gaugeFill.classList.add('high');
+
+            setTimeout(() => {
+                gaugeFill.setAttribute('stroke-dashoffset', offset.toString());
+            }, 200);
+        }
+
+        // Animate percentage counter
+        const gaugePercentage = document.getElementById('gaugePercentage');
+        if (gaugePercentage) {
+            this.animateCounter(gaugePercentage, 0, percentage, 1200);
+        }
+
+        // Scanner name and type
+        const scannerName = data.scanner_id || 'Unknown';
+        this.updateElementText('gaugeScannerName', scannerName);
+
+        const scannerTypes = {
+            'Canon': { type: 'DSLR Camera', badge: 'dslr' },
+            'Nikon': { type: 'DSLR Camera', badge: 'dslr' },
+            'Epson': { type: 'Document Scanner', badge: 'scanner' },
+            'iPhone': { type: 'Smartphone', badge: 'smartphone' },
+            'Samsung': { type: 'Smartphone', badge: 'smartphone' },
+        };
+
+        let detectedType = { type: 'Device', badge: 'scanner' };
+        for (const [key, val] of Object.entries(scannerTypes)) {
+            if (scannerName.toLowerCase().includes(key.toLowerCase())) {
+                detectedType = val;
+                break;
+            }
+        }
+
+        this.updateElementText('gaugeScannerType', detectedType.type);
+        const typeBadge = document.getElementById('gaugeTypeBadge');
+        if (typeBadge) {
+            typeBadge.className = `type-badge ${detectedType.badge}`;
+            typeBadge.textContent = detectedType.badge.toUpperCase();
+        }
+
+        // Model version and inference time
+        if (data.model_version) {
+            this.updateElementText('gaugeModelVersion', `Model ${data.model_version}`);
+        }
+        if (data.inference_time_ms !== undefined) {
+            this.updateElementText('gaugeInferenceTime', `${data.inference_time_ms}ms`);
+        }
+    }
+
+    animateCounter(element, from, to, duration) {
+        const startTime = performance.now();
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const value = Math.round(from + (to - from) * eased);
+            element.textContent = value + '%';
+            if (progress < 1) requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
+    }
+
+    updateFeatureBars(data) {
+        const fc = data.feature_confidences || {};
+
+        const prnuConf = fc.prnu_confidence || 0;
+        const fftConf = fc.fft_confidence || 0;
+        const textureConf = fc.texture_confidence || 0;
+
+        // Update bar fills with delay for animation
+        setTimeout(() => {
+            const prnuFill = document.getElementById('prnuBarFill');
+            if (prnuFill) prnuFill.style.width = (prnuConf * 100) + '%';
+
+            const fftFill = document.getElementById('fftBarFill');
+            if (fftFill) fftFill.style.width = (fftConf * 100) + '%';
+
+            const textureFill = document.getElementById('textureBarFill');
+            if (textureFill) textureFill.style.width = (textureConf * 100) + '%';
+        }, 500);
+
+        // Update score text
+        this.updateElementText('prnuScore', (prnuConf * 100).toFixed(1) + '%');
+        this.updateElementText('fftScore', (fftConf * 100).toFixed(1) + '%');
+        this.updateElementText('textureScore', (textureConf * 100).toFixed(1) + '%');
+    }
+
+    updateProbabilityBreakdown(data) {
+        const probContainer = document.getElementById('probBreakdown');
+        const probItems = document.getElementById('probItems');
+        if (!probContainer || !probItems) return;
+
+        const probs = data.image_info?.prediction_probabilities;
+        if (!probs || Object.keys(probs).length === 0) {
+            probContainer.style.display = 'none';
+            return;
+        }
+
+        probContainer.style.display = 'block';
+
+        // Sort by probability descending
+        const sorted = Object.entries(probs)
+            .sort(([, a], [, b]) => b - a);
+
+        const topValue = sorted[0]?.[1] || 0;
+
+        probItems.innerHTML = sorted.map(([name, prob], idx) => {
+            const pct = (prob * 100).toFixed(1);
+            const isTop = idx === 0;
+            return `
+                <div class="prob-item">
+                    <span class="prob-name">${this.escapeHtml(name)}</span>
+                    <div class="prob-bar-track">
+                        <div class="prob-bar-fill ${isTop ? 'top' : ''}" style="width: 0%" data-width="${pct}%"></div>
+                    </div>
+                    <span class="prob-value ${isTop ? 'top' : ''}">${pct}%</span>
+                </div>
+            `;
+        }).join('');
+
+        // Animate bars
+        setTimeout(() => {
+            probItems.querySelectorAll('.prob-bar-fill').forEach(bar => {
+                bar.style.width = bar.dataset.width;
+            });
+        }, 700);
+    }
+
+    // ==================== ANALYSIS PROGRESS ====================
+
+    showAnalysisProgress() {
+        const progress = document.getElementById('analysisProgress');
+        if (progress) {
+            // Reset all steps
+            ['Upload', 'Preprocess', 'Analyze', 'Result'].forEach(step => {
+                const indicator = document.getElementById(`step${step}Indicator`);
+                if (indicator) {
+                    indicator.className = 'step-indicator pending';
+                }
+                const stepEl = document.getElementById(`step${step}`);
+                if (stepEl) stepEl.classList.remove('completed');
+            });
+            progress.classList.add('visible');
+        }
+    }
+
+    hideAnalysisProgress() {
+        setTimeout(() => {
+            const progress = document.getElementById('analysisProgress');
+            if (progress) progress.classList.remove('visible');
+        }, 1500);
+    }
+
+    setProgressStep(step) {
+        const stepMap = {
+            'upload': { current: 'Upload', completed: [] },
+            'preprocess': { current: 'Preprocess', completed: ['Upload'] },
+            'analyze': { current: 'Analyze', completed: ['Upload', 'Preprocess'] },
+            'result': { current: 'Result', completed: ['Upload', 'Preprocess', 'Analyze'] },
+        };
+
+        const config = stepMap[step];
+        if (!config) return;
+
+        // Mark completed steps
+        config.completed.forEach(s => {
+            const indicator = document.getElementById(`step${s}Indicator`);
+            if (indicator) indicator.className = 'step-indicator completed';
+            const stepEl = document.getElementById(`step${s}`);
+            if (stepEl) stepEl.classList.add('completed');
+        });
+
+        // Mark current step active
+        const currentIndicator = document.getElementById(`step${config.current}Indicator`);
+        if (currentIndicator) currentIndicator.className = 'step-indicator active';
     }
 
     displayBatchResults(data) {

@@ -1,0 +1,555 @@
+/* ===========================
+   ENHANCED UI - Confidence Gauge, Feature Bars, Progress Steps
+   AI TraceFinder v2.0 Premium UI Enhancements
+   =========================== */
+
+/* ===========================
+   1. CONFIDENCE GAUGE (SVG Circular)
+   =========================== */
+.confidence-gauge-container {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-xl, 2rem);
+    padding: var(--gap-lg, 1.5rem);
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 16px;
+    margin-bottom: var(--gap-xl, 2rem);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.gauge-wrapper {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    flex-shrink: 0;
+}
+
+.gauge-svg {
+    width: 200px;
+    height: 200px;
+    transform: rotate(-90deg);
+    filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.3));
+}
+
+.gauge-bg {
+    fill: none;
+    stroke: rgba(100, 116, 139, 0.15);
+    stroke-width: 12;
+}
+
+.gauge-fill {
+    fill: none;
+    stroke-width: 12;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1),
+                stroke 0.8s ease;
+    filter: drop-shadow(0 0 6px currentColor);
+}
+
+.gauge-fill.low { stroke: url(#gaugeGradientLow); }
+.gauge-fill.medium { stroke: url(#gaugeGradientMedium); }
+.gauge-fill.high { stroke: url(#gaugeGradientHigh); }
+
+.gauge-center-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.gauge-percentage {
+    font-size: 2.8rem;
+    font-weight: 800;
+    line-height: 1;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -1px;
+}
+
+.gauge-label {
+    font-size: 0.75rem;
+    color: var(--text-muted, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 6px;
+    font-weight: 600;
+}
+
+.gauge-scanner-info {
+    flex: 1;
+    min-width: 260px;
+}
+
+.gauge-scanner-name {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-primary, #f1f5f9);
+    margin-bottom: 0.5rem;
+}
+
+.gauge-scanner-type {
+    font-size: 0.9rem;
+    color: var(--text-muted, #94a3b8);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.gauge-scanner-type .type-badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.type-badge.scanner { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+.type-badge.dslr { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+.type-badge.smartphone { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+
+.gauge-model-info {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.model-version-badge {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(6, 182, 212, 0.15);
+    color: #06b6d4;
+    border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.inference-time-badge {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* ===========================
+   2. FEATURE CONFIDENCE BARS
+   =========================== */
+.feature-bars-container {
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(100, 116, 139, 0.2);
+    border-radius: 12px;
+    padding: var(--gap-lg, 1.5rem);
+    margin-bottom: var(--gap-lg, 1.5rem);
+}
+
+.feature-bars-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary, #f1f5f9);
+    margin-bottom: var(--gap-lg, 1.5rem);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.feature-bars-title::before {
+    content: '📊';
+    font-size: 1.2rem;
+}
+
+.feature-bar-item {
+    margin-bottom: 1.25rem;
+}
+
+.feature-bar-item:last-child {
+    margin-bottom: 0;
+}
+
+.feature-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.feature-bar-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-secondary, #cbd5e1);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.feature-bar-name .feature-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+}
+
+.feature-bar-name .icon-prnu {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+.feature-bar-name .icon-fft {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a855f7;
+}
+.feature-bar-name .icon-texture {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.feature-bar-score {
+    font-weight: 700;
+    font-size: 0.9rem;
+    font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.feature-bar-track {
+    height: 10px;
+    background: rgba(100, 116, 139, 0.15);
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+}
+
+.feature-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.feature-bar-fill.prnu {
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+.feature-bar-fill.fft {
+    background: linear-gradient(90deg, #a855f7, #c084fc);
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.4);
+}
+.feature-bar-fill.texture {
+    background: linear-gradient(90deg, #10b981, #34d399);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.feature-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ===========================
+   3. ANALYSIS PROGRESS STEPS
+   =========================== */
+.analysis-progress {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 16px;
+    padding: 1.25rem 2rem;
+    display: none;
+    z-index: 5000;
+    min-width: 400px;
+    max-width: 550px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(59, 130, 246, 0.1);
+    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.analysis-progress.visible {
+    display: block;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.progress-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 1rem;
+}
+
+.progress-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.progress-step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    position: relative;
+}
+
+.progress-step:not(:last-child)::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: rgba(100, 116, 139, 0.2);
+    margin: 0 0.4rem;
+    transition: background 0.5s ease;
+}
+
+.progress-step.completed:not(:last-child)::after {
+    background: linear-gradient(90deg, #10b981, #3b82f6);
+}
+
+.step-indicator {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all 0.4s ease;
+    position: relative;
+}
+
+.step-indicator.pending {
+    background: rgba(100, 116, 139, 0.2);
+    color: var(--text-muted, #94a3b8);
+    border: 2px solid rgba(100, 116, 139, 0.3);
+}
+
+.step-indicator.active {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border: 2px solid #3b82f6;
+    animation: pulse-step 1.5s infinite;
+}
+
+.step-indicator.completed {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 2px solid #10b981;
+}
+
+@keyframes pulse-step {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+}
+
+.step-label {
+    font-size: 0.7rem;
+    color: var(--text-muted, #94a3b8);
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.step-indicator.active .step-label {
+    color: #60a5fa;
+}
+
+.step-indicator.completed .step-label {
+    color: #10b981;
+}
+
+/* ===========================
+   4. PREDICTION PROBABILITIES
+   =========================== */
+.prob-breakdown {
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(100, 116, 139, 0.2);
+    border-radius: 12px;
+    padding: var(--gap-lg, 1.5rem);
+    margin-bottom: var(--gap-lg, 1.5rem);
+}
+
+.prob-breakdown-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary, #f1f5f9);
+    margin-bottom: var(--gap-lg, 1.5rem);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.prob-breakdown-title::before {
+    content: '🎯';
+    font-size: 1.2rem;
+}
+
+.prob-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+.prob-item:last-child {
+    margin-bottom: 0;
+}
+
+.prob-name {
+    width: 140px;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #cbd5e1);
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.prob-bar-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(100, 116, 139, 0.12);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.prob-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.5), rgba(59, 130, 246, 0.8));
+}
+
+.prob-bar-fill.top {
+    background: linear-gradient(90deg, #3b82f6, #7c3aed);
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.3);
+}
+
+.prob-value {
+    width: 55px;
+    text-align: right;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted, #94a3b8);
+    font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.prob-value.top {
+    color: #60a5fa;
+}
+
+/* ===========================
+   5. ENHANCED ANIMATIONS
+   =========================== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-in {
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.animate-delay-1 { animation-delay: 0.1s; opacity: 0; }
+.animate-delay-2 { animation-delay: 0.2s; opacity: 0; }
+.animate-delay-3 { animation-delay: 0.3s; opacity: 0; }
+.animate-delay-4 { animation-delay: 0.4s; opacity: 0; }
+.animate-delay-5 { animation-delay: 0.5s; opacity: 0; }
+
+/* ===========================
+   6. RESPONSIVE
+   =========================== */
+@media (max-width: 768px) {
+    .confidence-gauge-container {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .gauge-wrapper {
+        width: 160px;
+        height: 160px;
+    }
+
+    .gauge-svg {
+        width: 160px;
+        height: 160px;
+    }
+
+    .gauge-percentage {
+        font-size: 2.2rem;
+    }
+
+    .gauge-scanner-info {
+        min-width: unset;
+        text-align: center;
+    }
+
+    .analysis-progress {
+        min-width: unset;
+        left: 1rem;
+        right: 1rem;
+        transform: none;
+        max-width: unset;
+    }
+
+    .analysis-progress.visible {
+        display: block;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .step-label {
+        display: none;
+    }
+}

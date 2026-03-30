@@ -6,6 +6,14 @@
     <title>AI TraceFinder - Image Forensics Analysis Tool</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='new_styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='enhanced_styles.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="description" content="AI TraceFinder - Advanced Image Forensics & Scanner Identification powered by Machine Learning">
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -176,6 +184,93 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- SVG Confidence Gauge -->
+                        <div class="confidence-gauge-container animate-in animate-delay-1" id="confidenceGaugeContainer">
+                            <div class="gauge-wrapper">
+                                <svg class="gauge-svg" viewBox="0 0 200 200">
+                                    <defs>
+                                        <linearGradient id="gaugeGradientLow" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#ef4444" />
+                                            <stop offset="100%" stop-color="#f59e0b" />
+                                        </linearGradient>
+                                        <linearGradient id="gaugeGradientMedium" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#f59e0b" />
+                                            <stop offset="100%" stop-color="#3b82f6" />
+                                        </linearGradient>
+                                        <linearGradient id="gaugeGradientHigh" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#3b82f6" />
+                                            <stop offset="100%" stop-color="#10b981" />
+                                        </linearGradient>
+                                    </defs>
+                                    <circle class="gauge-bg" cx="100" cy="100" r="85" />
+                                    <circle class="gauge-fill high" id="gaugeFill" cx="100" cy="100" r="85"
+                                        stroke-dasharray="534" stroke-dashoffset="534" />
+                                </svg>
+                                <div class="gauge-center-text">
+                                    <div class="gauge-percentage" id="gaugePercentage">0%</div>
+                                    <div class="gauge-label">Match Score</div>
+                                </div>
+                            </div>
+                            <div class="gauge-scanner-info">
+                                <div class="gauge-scanner-name" id="gaugeScannerName">-</div>
+                                <div class="gauge-scanner-type">
+                                    <span id="gaugeScannerType">Analyzing...</span>
+                                    <span class="type-badge scanner" id="gaugeTypeBadge">-</span>
+                                </div>
+                                <div class="gauge-model-info">
+                                    <span class="model-version-badge" id="gaugeModelVersion">Model v1</span>
+                                    <span class="inference-time-badge" id="gaugeInferenceTime">-ms</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Feature Confidence Bars -->
+                        <div class="feature-bars-container animate-in animate-delay-2" id="featureBarsContainer">
+                            <div class="feature-bars-title">Feature Analysis Breakdown</div>
+                            <div class="feature-bar-item">
+                                <div class="feature-bar-header">
+                                    <span class="feature-bar-name">
+                                        <span class="feature-icon icon-prnu">P</span>
+                                        PRNU Analysis
+                                    </span>
+                                    <span class="feature-bar-score" id="prnuScore">-</span>
+                                </div>
+                                <div class="feature-bar-track">
+                                    <div class="feature-bar-fill prnu" id="prnuBarFill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="feature-bar-item">
+                                <div class="feature-bar-header">
+                                    <span class="feature-bar-name">
+                                        <span class="feature-icon icon-fft">F</span>
+                                        FFT Spectral Analysis
+                                    </span>
+                                    <span class="feature-bar-score" id="fftScore">-</span>
+                                </div>
+                                <div class="feature-bar-track">
+                                    <div class="feature-bar-fill fft" id="fftBarFill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="feature-bar-item">
+                                <div class="feature-bar-header">
+                                    <span class="feature-bar-name">
+                                        <span class="feature-icon icon-texture">T</span>
+                                        Texture / Edge Analysis
+                                    </span>
+                                    <span class="feature-bar-score" id="textureScore">-</span>
+                                </div>
+                                <div class="feature-bar-track">
+                                    <div class="feature-bar-fill texture" id="textureBarFill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Prediction Probabilities Breakdown -->
+                        <div class="prob-breakdown animate-in animate-delay-3" id="probBreakdown" style="display:none;">
+                            <div class="prob-breakdown-title">Class Probabilities</div>
+                            <div id="probItems"></div>
                         </div>
 
                         <div class="results-grid">
@@ -645,6 +740,37 @@
         <div class="loading-spinner">
             <div class="spinner"></div>
             <p id="loadingText">Processing...</p>
+        </div>
+    </div>
+
+    <!-- Analysis Progress Indicator -->
+    <div class="analysis-progress" id="analysisProgress">
+        <div class="progress-title">Analyzing Image</div>
+        <div class="progress-steps">
+            <div class="progress-step" id="stepUpload">
+                <div class="step-indicator pending" id="stepUploadIndicator">
+                    ↑
+                    <span class="step-label">Upload</span>
+                </div>
+            </div>
+            <div class="progress-step" id="stepPreprocess">
+                <div class="step-indicator pending" id="stepPreprocessIndicator">
+                    ⚙
+                    <span class="step-label">Process</span>
+                </div>
+            </div>
+            <div class="progress-step" id="stepAnalyze">
+                <div class="step-indicator pending" id="stepAnalyzeIndicator">
+                    🔍
+                    <span class="step-label">Analyze</span>
+                </div>
+            </div>
+            <div class="progress-step" id="stepResult">
+                <div class="step-indicator pending" id="stepResultIndicator">
+                    ✓
+                    <span class="step-label">Done</span>
+                </div>
+            </div>
         </div>
     </div>
 
