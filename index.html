@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trace Finder Model Browser</title>
+  <style>
+    body { font-family: Inter, system-ui, sans-serif; margin: 0; padding: 0; background: #f5f7fb; color: #1f2937; }
+    header { background: #2563eb; color: white; padding: 2rem 1.5rem; }
+    main { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+    h1, h2 { margin-top: 0; }
+    .card { background: white; border: 1px solid #e5e7eb; border-radius: 18px; box-shadow: 0 10px 30px rgba(15,23,42,0.08); padding: 1.5rem; margin-bottom: 1.5rem; }
+    .file-list { list-style: none; padding: 0; margin: 0; }
+    .file-list li { padding: 0.85rem 0; border-bottom: 1px solid #e5e7eb; display: grid; grid-template-columns: 1fr auto; gap: 1rem; }
+    .file-list li:last-child { border-bottom: none; }
+    .file-name { font-weight: 600; }
+    .badge { color: #111827; background: #e0f2fe; border-radius: 999px; padding: 0.35rem 0.75rem; font-size: 0.85rem; }
+    .note { color: #4b5563; font-size: 0.95rem; }
+    .footer { text-align: center; color: #6b7280; font-size: 0.9rem; margin-top: 2rem; }
+    pre { background: #f3f4f6; padding: 1rem; overflow-x: auto; border-radius: 0.75rem; }
+    a { color: #1d4ed8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Trace Finder Saved Models</h1>
+    <p>Static UI summary of available saved models and artifact files in this workspace.</p>
+  </header>
+  <main>
+    <section class="card">
+      <h2>Provided model artifacts</h2>
+      <p class="note">These files are present in the repository root. Use the Python verifier to confirm availability and sizes.</p>
+      <ul class="file-list" id="modelList"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Supporting artifacts</h2>
+      <p class="note">These files include scalers, encoders, training history, and feature artifacts.</p>
+      <ul class="file-list" id="artifactList"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Additional reference pages</h2>
+      <p class="note">The ZIP archive contains several HTML bookmark pages linking to external resources. Extract the archive if you need them.</p>
+      <ul class="file-list">
+        <li><span class="file-name">Trace_finder-20260402T041728Z-1-001.zip</span><span class="badge">Archive</span></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>How to use</h2>
+      <p class="note">The interactive app is defined in <code>forensics_app.py</code>. Use Streamlit to launch it.</p>
+      <pre>python -m streamlit run forensics_app.py</pre>
+      <p class="note">If Streamlit is not installed, run <code>pip install streamlit</code> first.</p>
+      <p class="note">The static file browser can still be opened directly in a browser from this page.</p>
+    </section>
+  </main>
+  <div class="footer">Generated UI for Trace Finder saved model artifacts.</div>
+  <script>
+    const models = [
+      { name: 'scanner_hybrid (2).keras', type: 'Keras model' },
+      { name: 'scanner_hybrid_final (1).keras', type: 'Keras model' },
+      { name: 'scanner_hybrid_final.keras', type: 'Keras model' }
+    ];
+
+    const artifacts = [
+      { name: 'fp_keys.npy', type: 'NumPy array' },
+      { name: 'hybrid_feat_scaler.pkl', type: 'Pickle scaler' },
+      { name: 'hybrid_label_encoder.pkl', type: 'Pickle encoder' },
+      { name: 'hybrid_training_history.pkl', type: 'Training history' },
+      { name: 'enhanced_features.pkl', type: 'Feature set' },
+      { name: 'features.pkl', type: 'Feature set' },
+      { name: 'flatfield_residuals.pkl', type: 'Artifacts' },
+      { name: 'official_wiki_residuals.pkl', type: 'Artifacts' },
+      { name: 'scanner_fingerprints (2).pkl', type: 'Artifact data' },
+      { name: 'scanner_fingerprints (3).pkl', type: 'Artifact data' }
+    ];
+
+    const modelList = document.getElementById('modelList');
+    const artifactList = document.getElementById('artifactList');
+
+    models.forEach(file => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="file-name">${file.name}</span><span class="badge">${file.type}</span>`;
+      modelList.appendChild(li);
+    });
+
+    artifacts.forEach(file => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="file-name">${file.name}</span><span class="badge">${file.type}</span>`;
+      artifactList.appendChild(li);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment files
+.env
+.venv/
+venv/
+
+# Streamlit
+.streamlit/
+
+# Large or generated artifacts
+official_wiki_residuals.pkl
+Trace_finder-20260402T041728Z-1-001.zip
+files.zip
+load_test_output.txt
+
+# Temporary files
+temp_model_load.py
