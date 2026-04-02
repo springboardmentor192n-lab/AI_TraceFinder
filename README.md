@@ -25,3 +25,7 @@ Place trained model files in artifacts/:
   Originals.html        PDF-to-TIFF conversion + tamper manifest
   Tampered images.html  22-D patch features + SVM training + inference
   Wikipedia.html        Wikipedia preprocessing + Hybrid CNN training
+
+## Notes
+This repository contains the Streamlit app `forensics_app.py` and supporting model artifacts for local deployment.
+
