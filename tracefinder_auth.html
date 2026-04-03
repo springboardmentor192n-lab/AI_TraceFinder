@@ -432,7 +432,7 @@
 
       showToast('Analyzing...', 'pending');
       try {
-        const res = await fetch(`${API_BASE}/analyze`, {
+        const res = await fetch(`${API_BASE}/api/analyze`, {
           method: 'POST',
           credentials: 'include',
           body: formData

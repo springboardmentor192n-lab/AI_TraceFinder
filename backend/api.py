@@ -422,6 +422,7 @@ def get_me():
 
 # ================== ANALYSIS ENDPOINTS ==================
 @app.route('/health', methods=['GET'])
+@app.route('/api/health', methods=['GET'])
 def health():
     """Health check endpoint"""
     try:
@@ -439,6 +440,7 @@ def health():
 
 
 @app.route('/analyze', methods=['POST'])
+@app.route('/api/analyze', methods=['POST'])
 @login_required
 def analyze():
     """Analyze image with full error handling"""
@@ -512,6 +514,57 @@ def analyze():
 
     except Exception as e:
         logger.error(f"Analyze endpoint error: {e}")
+        return jsonify({'error': 'analysis failed', 'details': str(e)}), 500
+
+
+@app.route('/api/test/analyze', methods=['POST'])
+def test_analyze():
+    """Test analyze endpoint (no authentication required for testing)"""
+    try:
+        arts = load_arts()
+        if arts is None:
+            return jsonify({'error': 'model resources missing', 'missing': MISSING}), 400
+
+        if 'file' not in request.files:
+            return jsonify({'error': 'no file uploaded'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'no file selected'}), 400
+        
+        if not file.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.tif', '.tiff')):
+            return jsonify({'error': 'unsupported image format. use jpg, png, or tiff'}), 400
+        
+        file.seek(0, 2)
+        file_length = file.tell()
+        file.seek(0)
+        
+        if file_length > MAX_FILE_SIZE:
+            return jsonify({'error': f'file too large (max {MAX_FILE_SIZE/1024/1024:.0f} MB)'}), 400
+
+        try:
+            img = Image.open(file.stream).convert('RGB')
+            img = np.array(img)
+            
+            if img.ndim == 2:
+                img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+            else:
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        
+        except Exception as e:
+            return jsonify({'error': 'invalid image format', 'details': str(e)}), 400
+
+        try:
+            result = run_inference(img, arts)
+            logger.info(f"Test analysis completed: {file.filename}")
+            return jsonify({**result, 'test': True, 'note': 'Test endpoint - no auth required'}), 200
+        
+        except Exception as e:
+            logger.error(f"Test inference error: {e}")
+            return jsonify({'error': 'inference failed', 'details': str(e)}), 500
+
+    except Exception as e:
+        logger.error(f"Test analyze endpoint error: {e}")
         return jsonify({'error': 'analysis failed', 'details': str(e)}), 500
 
 
