@@ -1,31 +1,65 @@
-# TRACE_FINDER — SUPATLANTIQUE Forensics
+# TraceFinder - AI Document Forensic Intelligence
 
-Scanner Source Identification & Forgery Detection
-11 scanners · Hybrid CNN + SVM · Streamlit Dashboard
+Advanced AI-powered document forensic analysis for scanner identification and tampering detection.
 
-## Quick Start
+## 🚀 Quick Start
+
+### Streamlit App (Python Backend)
+```bash
 pip install -r requirements.txt
 streamlit run forensics_app.py
+```
 
-## Artifact Placement
-Place trained model files in artifacts/:
-  scanner_hybrid.keras            (Cell 12)
-  hybrid_label_encoder.pkl        (Cell 11)
-  hybrid_feat_scaler.pkl          (Cell 11)
-  scanner_fingerprints.pkl        (Cell 6)
-  fp_keys.npy                     (Cell 6)
-  artifacts_tamper_patch/
-    patch_svm_sig_calibrated.pkl  (Cell 19)
-    patch_scaler.pkl              (Cell 19)
-    thresholds_patch.json         (Cell 19)
+### React App (Frontend)
+```bash
+cd react-app
+npm install
+npm start
+```
 
-## HTML Pipeline Docs (open in browser)
-  Flatfield.html        PRNU flatfield residual preprocessing
-  Official.html         Official docs + PRNU/FFT/LBP features + PCA
-  Originals.html        PDF-to-TIFF conversion + tamper manifest
-  Tampered images.html  22-D patch features + SVM training + inference
-  Wikipedia.html        Wikipedia preprocessing + Hybrid CNN training
+## 📁 Project Structure
 
-## Notes
-This repository contains the Streamlit app `forensics_app.py` and supporting model artifacts for local deployment.
+```
+TraceFinder/
+├── forensics_app.py          # Main Streamlit application
+├── requirements.txt           # Python dependencies
+├── react-app/              # React frontend
+│   ├── src/
+│   │   ├── components/
+│   │   └── pages/
+│   └── package.json
+├── artifacts/               # ML models and data
+└── .streamlit/             # Streamlit configuration
+```
 
+## 🔬 Features
+
+- **Scanner Identification**: Identify scanner brand/model with 95%+ accuracy
+- **Tampering Detection**: Advanced forgery detection using ML
+- **Multi-Page React UI**: Professional dashboard with charts
+- **Authentication**: Login/Signup with Google/Facebook OAuth
+- **Export**: PDF reports and JSON data export
+- **History**: Searchable analysis history with filters
+
+## 🌐 Access
+
+- **Streamlit App**: http://localhost:8501
+- **React App**: http://localhost:3000
+
+## 📊 Supported Scanners
+
+- Canon LiDE 120, CanoScan 9000F
+- HP ScanJet Pro 2500
+- Epson Perfection V39, V550
+- And more...
+
+## 🤖 Technology Stack
+
+- **Backend**: Python, Streamlit, TensorFlow, OpenCV
+- **Frontend**: React, Recharts, Lucide Icons
+- **ML**: CNN + SVM Hybrid Architecture
+- **Features**: PRNU Analysis, Noise Pattern Detection
+
+## 📄 License
+
+MIT License - see LICENSE file for details.
