@@ -87,6 +87,7 @@ Features:
 ---
 
 ## 📁 Project Structure
+```
 TraceMaker/
 │── app.py
 │── train_model.py
@@ -99,5 +100,5 @@ TraceMaker/
 ├── Official/
 ├── Wikipedia/
 ├── Tampered images/
-
+```
 
