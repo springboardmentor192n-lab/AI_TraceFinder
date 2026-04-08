@@ -1,41 +1,63 @@
-# AI_TRACEFINDER: Document Forensics Engine
+# TraceFinder - AI Document Forensic Intelligence
 
-**AI_TRACEFINDER** is an advanced, enterprise-grade AI pipeline designed for physical document forensics. The system functions as a high-fidelity anomaly scanner capable of determining the hardware origin (scanner source identity) of a specific document, while simultaneously inspecting images at the patch level to detect digital tampering or forgery manipulations.
+Advanced AI-powered document forensic analysis pipeline for scanner hardware identification and digital tampering detection natively deployed via an enterprise dashboard.
 
----
+## 🚀 Quick Start
 
-### Workflow Architecture
-The system follows a streamlined document inspection pipeline:
-1. **Upload & Preprocessing:** Users submit `.png`, `.tif`, or `.jpg` documents via the Streamlit web dashboard.
-2. **Patch Extraction:** The internal scripts decompose high-resolution images into structured `128x128` patches required by the convolution filters.
-3. **Deep Learning Inference:** The patches undergo dual-inference through the AI PyTorch engines:
-   - **Scanner Profiler:** Extracts hardware-level noise characteristics to identify the scanner brand/model.
-   - **Anomaly Detector:** Scans edges and internal residual noise to check for digital splicing, copy-moving, or localized retouching variants.
-4. **Dashboard Execution:** The system parses output probability matrices to render clear predictions, confidence scores, and outputs custom Pseudo-Heatmap filters (such as Noise Residual and Spectral analysis maps) natively inside the UI.
+Ensure you have your dependencies successfully installed to launch the AI dashboard:
 
----
+```bash
+pip install -r requirements.txt
+cd app
+python -m streamlit run app.py
+```
 
-### Project Files & Directory Structure
+## 📁 Project Structure
 
-*   `app/app.py`: The main frontend engine. Built on Streamlit with comprehensive UI designs, it manages interactive end-user uploading (Single & Batch pipelines), triggers neural inference, and visually handles data presentation.
-*   `model/cnn_model.py`: Architecturally houses the deep learning structure that establishes the core `CNN` module mapped over the custom ResNet18 backbone. 
-*   `train.py`: The PyTorch training loop algorithm utilized to train our hardware Identification model on standard noise data (`model.pth`).
-*   `train_tamper.py`: The targeted classification training script configured specifically to teach the engine structural manipulations utilizing optimized weight decay (`tamper_model.pth`).
-*   `dataset_loader.py` & `tamper_loader.py`: Specialized system utility files focusing on I/O operations, dataset structure mapping, and random geometric data slicing so the models correctly learn patch features instead of memorizing native sizes.
-*   `model.pth` & `tamper_model.pth`: The final frozen state-dictionary artifacts holding the mathematical weights resulting from the deep learning sessions.
+```
+TraceFinder_Final/
+├── app/
+│   └── app.py                  # Main Streamlit Enterprise Dashboard Interface
+├── model/  
+│   └── cnn_model.py            # Neural Network Architecture (Pretrained ResNet18 adapted for 1-Channel)
+├── dataset_loader.py           # I/O script mapping scanner identity patches (128x128)
+├── tamper_loader.py            # I/O script mapping manipulation anomaly datasets
+├── train.py                    # Scanner source-identification ML training loop
+├── train_tamper.py             # Feature tampering classification training loop
+├── model.pth                   # Frozen neural weights for Scanner Classification
+├── tamper_model.pth            # Frozen neural weights for Forgery Classification
+└── requirements.txt            # Python deep learning dependencies
+```
 
----
+## 🔬 Features & Workflow
 
-### Model Architecture Details
-To ensure extremely resilient accuracy over complex grayscale scanner noise, we successfully upgraded the core engine to **Transfer Learning**.
-*   **Base Network**: We integrated the heavily utilized `ResNet18` deep learning model.
-*   **1-Channel Augmentation**: Standard ResNet dictates a 3-channel RGB assumption. To retain the highly-functional pre-trained edges without causing structural failure, we initialized the `conv1` layer dynamically by mathematically collapsing the three pre-trained channels directly into our 1-channel dimension. This guarantees rapid convergence limits overfitting without discarding critical early-layer mathematical mappings.
+- **Scanner Hardware Identification**: Extracts micro-noise residuals natively printed by specific hardware to identify the exact scanner brand/model.
+- **Patch-Level Tampering Detection**: Advanced digital forgery detection algorithm detecting copy-move, splicing, and local retouching anomalies across scanned documentation. 
+- **Enterprise Dashboard**: A custom-styled, strictly professional multi-page UI handling real-time File Uploads bridging directly into PyTorch predictions.
+- **Dynamic Spectral Mapping**: Generates active Pseudo-Heatmaps (e.g., Built-In Spectral Analysis, Noise Variance Enhancement) upon image scanning inside the dashboard.
+- **Bulk Analytics Pipeline**: Handles simultaneous parsing and automated classification matrix metrics for batch uploads.
 
----
+## 🌐 Access
 
-### Live Deployment
-🚀 **[View Live Dashboard Deployment Here]($\{INSERT_DEPLOYMENT_LINK_HERE\})**
+- **Live Deployment Link**: http://localhost:8503  *(Replace with actual Cloud Deployment Domain before final submission)*
 
-### Demonstration & Outputs
+## 📊 Supported Scanners
 
-To view the output images and visual demonstration of the Dashboard, **just look in the `results` folder** inside this repository!
+The Neural Network accurately differentiates traces spanning key hardware components including:
+- Canon LiDE 120, CanoScan 9000F, CanoScan 220
+- Epson Perfection V39, V370, V550
+- Generic HP Scanners
+
+## 🤖 Technology Stack
+
+- **Backend / Machine Learning**: Python, PyTorch, OpenCV, Scikit-Learn
+- **Core ML Architecture**: Transfer Learning (Feature-extracted `ResNet18` collapsed onto 1-Channel CNN logic)
+- **Frontend / Interface Engine**: Streamlit mapped with dynamic customized CSS properties rendering Neumorphic formatting.
+
+## 📈 Demonstration Outputs
+
+To view the exact performance, output graphics, and interface execution of the model, **just look the `results` folder** directly inside this repository!
+
+## 📄 License
+
+MIT License - see LICENSE file for details.
