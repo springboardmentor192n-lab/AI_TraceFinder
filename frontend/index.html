@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TraceFinder — Forensic Document Division</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' font-size='50'%3E%F0%9F%94%8D%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Oswald:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+<nav>
+  <div class="logo-area">
+    <div class="badge-shield">🔍</div>
+    <div>
+      <div class="logo-text">TraceFinder</div>
+      <span class="logo-sub">Forensic Document Division</span>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('home',this)">[ Case File ]</button>
+    <button class="nav-tab" onclick="showPage('history',this)">[ Records ]</button>
+    <button class="nav-tab" onclick="showPage('about',this)">[ Dossier ]</button>
+  </div>
+</nav>
+
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-type">Analyzing evidence<span class="loading-dots"></span></div>
+  <div class="loading-step" id="loadingStep">Extracting noise residual</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- HOME -->
+<div class="page active" id="page-home">
+<div class="main-wrap">
+  <div style="margin-bottom:1.5rem;">
+    <div style="font-family:var(--font-type);font-size:11px;color:var(--ink4);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Active Investigation</div>
+    <div style="font-family:var(--font-type);font-size:28px;color:var(--paper);line-height:1.1;text-shadow:1px 1px 0 rgba(0,0,0,0.5);">Document Forensics Laboratory</div>
+  </div>
+  <div class="paper-card">
+    <div class="card-header">
+      <div class="card-header-title">Select Analysis Method</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink4);" id="clockEl"></div>
+    </div>
+    <div class="card-body">
+      <div class="mode-strip">
+        <button class="mode-btn active" onclick="setMode('scanner',this)">&#8618; Scanner ID</button>
+        <button class="mode-btn" onclick="setMode('tampering',this)">&#8618; Tampering</button>
+        <button class="mode-btn" onclick="setMode('comparison',this)">&#8618; Compare</button>
+        <button class="mode-btn" onclick="setMode('batch',this)">&#8618; Batch</button>
+      </div>
+
+      <!-- SCANNER -->
+      <div id="mode-scanner">
+        <input type="file" id="scannerFile" accept="image/*,.pdf,.tif,.tiff" onchange="handleFile(this,'scanner')">
+        <div class="drop-zone" id="scannerDrop" onclick="document.getElementById('scannerFile').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event,'scanner')">
+          <span class="drop-icon">&#128194;</span>
+          <div class="drop-title">Drop document for scanner identification</div>
+          <div class="drop-sub">JPG &middot; PNG &middot; TIFF &middot; PDF &mdash; max 16MB</div>
+          <div style="margin-top:14px;"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();document.getElementById('scannerFile').click()">Choose File</button></div>
+        </div>
+        <div class="file-pill" id="scannerPreview">
+          <span>&#128196;</span>
+          <span class="file-pill-name" id="scannerFileName"></span>
+          <span class="file-pill-size" id="scannerFileSize"></span>
+          <button class="btn btn-outline btn-sm" onclick="clearFile('scanner')">&times; Remove</button>
+        </div>
+        <button class="btn btn-primary" id="analyzeScannerBtn" onclick="analyzeScanner()" disabled style="width:100%;">&#8618; Run Scanner Identification</button>
+        <div class="result-section" id="scannerResults"></div>
+      </div>
+
+      <!-- TAMPERING -->
+      <div id="mode-tampering" style="display:none;">
+        <input type="file" id="tamperFile" accept="image/*,.pdf,.tif,.tiff" onchange="handleFile(this,'tamper')">
+        <div class="drop-zone" id="tamperDrop" onclick="document.getElementById('tamperFile').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event,'tamper')">
+          <span class="drop-icon">&#128270;</span>
+          <div class="drop-title">Submit document for tampering analysis</div>
+          <div class="drop-sub">Checks compression artifacts &middot; noise inconsistencies &middot; metadata conflicts</div>
+          <div style="margin-top:14px;"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();document.getElementById('tamperFile').click()">Choose File</button></div>
+        </div>
+        <div class="file-pill" id="tamperPreview">
+          <span>&#128196;</span>
+          <span class="file-pill-name" id="tamperFileName"></span>
+          <span class="file-pill-size" id="tamperFileSize"></span>
+          <button class="btn btn-outline btn-sm" onclick="clearFile('tamper')">&times; Remove</button>
+        </div>
+        <button class="btn btn-primary" id="analyzeTamperBtn" onclick="analyzeTampering()" disabled style="width:100%;">&#8618; Run Tampering Analysis</button>
+        <div class="result-section" id="tamperResults"></div>
+      </div>
+
+      <!-- COMPARISON -->
+      <div id="mode-comparison" style="display:none;">
+        <input type="file" id="cmp1File" accept="image/*,.pdf,.tif,.tiff" onchange="handleFile(this,'cmp1')">
+        <input type="file" id="cmp2File" accept="image/*,.pdf,.tif,.tiff" onchange="handleFile(this,'cmp2')">
+        <div class="compare-grid">
+          <div class="compare-slot" id="cmp1Slot" onclick="document.getElementById('cmp1File').click()">
+            <span style="font-size:24px;">&#128196;</span>
+            <span style="font-weight:700;color:var(--ink);">Document A</span>
+            <span id="cmp1Name">click to upload</span>
+          </div>
+          <div class="vs-div">vs.</div>
+          <div class="compare-slot" id="cmp2Slot" onclick="document.getElementById('cmp2File').click()">
+            <span style="font-size:24px;">&#128196;</span>
+            <span style="font-weight:700;color:var(--ink);">Document B</span>
+            <span id="cmp2Name">click to upload</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="compareBtn" onclick="compareDocuments()" disabled style="width:100%;">&#8618; Compare Documents</button>
+        <div class="result-section" id="compareResults"></div>
+      </div>
+
+      <!-- BATCH -->
+      <div id="mode-batch" style="display:none;">
+        <input type="file" id="batchFiles" accept="image/*,.pdf,.tif,.tiff" multiple onchange="handleBatch(this)">
+        <div class="drop-zone" onclick="document.getElementById('batchFiles').click()">
+          <span class="drop-icon">&#128230;</span>
+          <div class="drop-title">Select multiple documents for batch analysis</div>
+          <div class="drop-sub">Files will be grouped by scanner source</div>
+          <div style="margin-top:14px;"><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();document.getElementById('batchFiles').click()">Select Files</button></div>
+        </div>
+        <div id="batchList" style="margin-top:1rem;"></div>
+        <button class="btn btn-primary" id="batchBtn" onclick="runBatch()" disabled style="width:100%;margin-top:0.5rem;">&#8618; Run Batch Analysis</button>
+        <div class="result-section" id="batchResults"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="page-history">
+<div class="main-wrap">
+  <div style="margin-bottom:1.5rem;">
+    <div style="font-family:var(--font-type);font-size:11px;color:var(--ink4);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Classified Archive</div>
+    <div style="font-family:var(--font-type);font-size:28px;color:var(--paper);text-shadow:1px 1px 0 rgba(0,0,0,0.5);">Analysis Records</div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-n" id="h-total">0</div><div class="stat-l">Total Cases</div></div>
+    <div class="stat-box"><div class="stat-n" id="h-scanner">0</div><div class="stat-l">Scanner IDs</div></div>
+    <div class="stat-box"><div class="stat-n" id="h-tamper">0</div><div class="stat-l">Tamper Checks</div></div>
+    <div class="stat-box"><div class="stat-n" id="h-compare">0</div><div class="stat-l">Comparisons</div></div>
+  </div>
+  <div class="paper-card">
+    <div class="card-header">
+      <div class="card-header-title">Case Log</div>
+      <button class="btn btn-red btn-sm" onclick="clearHistory()">Purge Records</button>
+    </div>
+    <div style="overflow-x:auto;position:relative;z-index:1;">
+      <table class="history-table">
+        <thead><tr><th>Type</th><th>Document</th><th>Finding</th><th>Conf.</th><th>Timestamp</th><th></th></tr></thead>
+        <tbody id="historyBody">
+          <tr><td colspan="6" style="text-align:center;color:var(--ink4);padding:2.5rem;font-family:var(--font-mono);font-size:12px;">&mdash; No cases on record &mdash;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ABOUT -->
+<div class="page" id="page-about">
+<div class="main-wrap">
+  <div style="margin-bottom:1.5rem;">
+    <div style="font-family:var(--font-type);font-size:11px;color:var(--ink4);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Classified &mdash; Level 3</div>
+    <div style="font-family:var(--font-type);font-size:28px;color:var(--paper);text-shadow:1px 1px 0 rgba(0,0,0,0.5);">Project Dossier</div>
+  </div>
+  <div class="paper-card" style="margin-bottom:1.5rem;">
+    <div class="card-header"><div class="card-header-title">Mission Overview</div></div>
+    <div class="card-body">
+      <p style="font-family:var(--font-mono);font-size:13px;color:var(--ink2);line-height:1.9;max-width:620px;">TraceFinder identifies which scanner was used to scan a document. Each scanner leaves tiny hidden noise patterns caused by hardware imperfections such as sensor defects, dust, and optical variation. These signatures can reveal the scanner brand, model, and likely source device instance.</p>
+      <div style="margin-top:1rem;padding:1rem;border-left:4px solid var(--amber);background:var(--paper2);font-family:var(--font-mono);font-size:12px;color:var(--ink3);font-style:italic;">"Just as cameras leave digital fingerprints and printers leave toner patterns, scanners leave their own source signatures."</div>
+    </div>
+  </div>
+  <div class="about-grid">
+    <div class="about-card"><h3>Scanner Fingerprints</h3><p>Extracts hidden noise patterns left behind by scanner sensors, optics, dust, and transport mechanics.</p></div>
+    <div class="about-card"><h3>Brand and Model</h3><p>Uses scanner signatures to estimate the source brand, model, and likely device family for uploaded scans.</p></div>
+    <div class="about-card"><h3>Tampering Detection</h3><p>Detects inconsistent compression, copy-move forgeries, and anomalous noise breaks across document regions.</p></div>
+    <div class="about-card"><h3>Document Comparison</h3><p>Determine if two documents share the same scanner origin &mdash; critical for chain-of-custody verification.</p></div>
+    <div class="about-card"><h3>Batch Processing</h3><p>Process dozens of documents simultaneously. Auto-groups results by inferred scanner device.</p></div>
+    <div class="about-card"><h3>Forensic Reports</h3><p>Court-ready PDF reports with executive summary, detection results, confidence metrics, and feature analysis.</p></div>
+  </div>
+</div>
+</div>
+
+<script src="assets/js/app.js"></script>
+</body>
+</html>

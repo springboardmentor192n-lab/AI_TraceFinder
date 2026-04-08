@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+
+.venv/
+.venv-local/
+venv/
+
+.env
+.env.*
+
+*.log
+
+# Local-only development helpers
+tests/
+
+# Local training data
+backend/sample_dataset/
