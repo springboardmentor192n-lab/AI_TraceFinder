@@ -94,7 +94,7 @@ Features:
 
 ## 📁 Project Structure
 ```
-TraceMaker/
+TraceFinder/
 │── app.py
 │── train_model.py
 │── model.pkl
