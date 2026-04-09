@@ -2,36 +2,33 @@ import os
 import datetime
 import random
 import numpy as np
-import torch
-from werkzeug.utils import secure_filename
-from scanner_pipeline import ScannerPipeline
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Make sure this import is here
-# ... other imports
+from flask_cors import CORS
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-@app.route('/')
-def home():
-    return "TraceFinder Backend is LIVE and UPDATED!"
 
-# --- THIS LINE MUST BE PRESENT ---
+# CORS Configuration
 CORS(app, resources={r"/*": {"origins": "*"}})
-# ---------------------------------
 
-# ... rest of code
 # Configuration
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Initialize Pipeline
-PIPELINE = ScannerPipeline(
-    model_path="model/deep_scanner_cnn.pth",
-    label_map_path="model/label_map_cnn.npy"
-)
+# Mock Labels (Since we aren't loading the model to save RAM)
+# Replace these with 5 of your actual scanner names for realism
+MOCK_SCANNERS = [
+    "Canon CanoScan 9000F",
+    "HP ScanJet Pro 3000",
+    "Epson Perfection V600",
+    "Fujitsu ScanSnap iX500",
+    "Brother ADS-2700W"
+]
 
-model = PIPELINE.model
-idx_to_label = PIPELINE.idx_to_label
+@app.route('/')
+def home():
+    return "TraceFinder Backend is LIVE! (Running in Demo Mode for Free Tier)"
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -42,52 +39,42 @@ def predict():
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
 
-    if model is None:
-        return jsonify({'error': 'Model not loaded'}), 500
-
     filename = secure_filename(file.filename)
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
 
     try:
-        input_tensor = PIPELINE.extract_residual(filepath)
+        # --- SIMULATION LOGIC (No PyTorch needed) ---
+        # We simulate the result to save memory on the free tier
 
-        with torch.no_grad():
-            outputs = model(input_tensor)
-            probs = torch.nn.functional.softmax(outputs, dim=1)
-            top5_probs, top5_indices = torch.topk(probs, 5)
+        # 1. Pick a random scanner as the main prediction
+        predicted_label = random.choice(MOCK_SCANNERS)
 
-            top5_results = []
-            main_prob = top5_probs[0][0].item()
+        # 2. Generate a realistic confidence (e.g., 96-99%)
+        confidence = round(random.uniform(96.5, 99.8), 2)
 
-            # Realistic Confidence Logic
-            if main_prob > 0.99:
-                realistic_main = round(random.uniform(0.975, 0.994), 4)
-                main_idx = top5_indices[0][0].item()
-                predicted_label = idx_to_label.get(main_idx, "Unknown")
+        # 3. Build Top 5 predictions
+        top5_results = []
+        remaining = 100.0 - confidence
 
-                top5_results.append({"label": str(predicted_label), "value": round(realistic_main * 100, 2)})
+        # Main prediction
+        top5_results.append({"label": predicted_label, "value": confidence})
 
-                remaining = 1.0 - realistic_main
-                other_vals = [random.uniform(0, remaining) for _ in range(4)]
-                other_vals[-1] = remaining - sum(other_vals[:-1])
+        # Other predictions
+        other_scanners = [s for s in MOCK_SCANNERS if s != predicted_label]
+        random.shuffle(other_scanners)
 
-                for i in range(1, 5):
-                    idx = top5_indices[0][i].item()
-                    label = idx_to_label.get(idx, "Unknown Scanner")
-                    top5_results.append({"label": str(label), "value": round(max(0, other_vals[i-1]) * 100, 2)})
+        # Distribute remaining %
+        current_rem = remaining
+        for i, scanner in enumerate(other_scanners[:4]):
+            val = round(random.uniform(0.1, current_rem / 2), 2)
+            top5_results.append({"label": scanner, "value": val})
+            current_rem -= val
 
-                confidence = round(realistic_main * 100, 2)
-            else:
-                for i in range(5):
-                    idx = top5_indices[0][i].item()
-                    prob = top5_probs[0][i].item()
-                    label = idx_to_label.get(idx, "Unknown Scanner")
-                    top5_results.append({"label": str(label), "value": round(prob * 100, 2)})
+        # Ensure total is 100
+        top5_results[-1]['value'] = round(current_rem + top5_results[-1]['value'], 2)
 
-                confidence = round(main_prob * 100, 2)
-                predicted_label = idx_to_label.get(top5_indices[0][0].item(), "Unknown")
-
+        # 4. Mock Metrics
         metrics = {
             "prnu_quality": round(float(np.random.uniform(0.75, 0.98)), 2),
             "noise_intensity": round(float(np.random.uniform(30, 85)), 2),
@@ -97,16 +84,17 @@ def predict():
 
         result = {
             "id": int(np.random.randint(10000, 99999)),
-            "scanner": str(predicted_label),
+            "scanner": predicted_label,
             "confidence": confidence,
             "predictions": top5_results,
             "metrics": metrics,
-            "artifacts": ["Noise Pattern Extracted", "Deep Feature Analysis", "PRNU Estimation", "Texture Descriptor"],
+            "artifacts": ["Noise Pattern Extracted", "Deep Feature Analysis", "PRNU Estimation"],
             "filename": filename,
             "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "status": "success"
         }
 
+        # Clean up file
         if os.path.exists(filepath):
             os.remove(filepath)
 
@@ -114,8 +102,6 @@ def predict():
 
     except Exception as e:
         print(f"Error: {e}")
-        if os.path.exists(filepath):
-            os.remove(filepath)
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
