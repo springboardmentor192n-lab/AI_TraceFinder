@@ -1,63 +1,86 @@
-# TraceFinder - AI Document Forensic Intelligence
+<div align="center">
+  <img src="https://img.icons8.com/nolan/96/artificial-intelligence.png" width="80px">
+  <h1>TraceFinder Enterprise</h1>
+  <p><b>Advanced AI Document Forensic Intelligence Pipeline</b></p>
+  
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://aitracefinder1.streamlit.app/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=flat&logo=PyTorch&logoColor=white)](https://pytorch.org/)
+[![Python](https://img.shields.io/badge/python-3670A0?style=flat&logo=python&logoColor=ffdd54)](https://www.python.org/)
+[![OpenCV](https://img.shields.io/badge/opencv-%23white.svg?style=flat&logo=opencv&logoColor=white)](https://opencv.org/)
 
-Advanced AI-powered document forensic analysis pipeline for scanner hardware identification and digital tampering detection natively deployed via an enterprise dashboard.
+</div>
 
-## 🚀 Quick Start
+---
 
-Ensure you have your dependencies successfully installed to launch the AI dashboard:
+**TraceFinder** is an enterprise-grade AI-powered digital forensics suite designed to instantly analyze, trace, and identify document manipulation. Natively deployed on the Streamlit Community Cloud, this highly specialized pipeline maps micro-noise residuals intrinsic to hardware scanners and executes high-fidelity algorithmic tampering detection.
+
+### 🌐 Live Cloud Deployment
+**Access the fully-functional Enterprise Dashboard here:**  
+[👉 **https://aitracefinder1.streamlit.app/**](https://aitracefinder1.streamlit.app/)
+
+---
+
+## 🔬 Core Forensic Capabilities
+
+*   **Scanner Hardware Fingerprinting**: Extracts invisible micro-noise variance left inherently by specific hardware sensors, allowing the AI to trace the exact origin scanner brand and model mathematically.
+*   **Patch-Level Tampering Detection**: Advanced forgery detection algorithms natively specialized in identifying splicing, copy-move dynamics, and localized retouching anomalies across scanned documentation.
+*   **Spectral Edge Mapping**: Actively generates distinct Pseudo-Heatmaps (Spectral Analysis, Depth Perception, Noise Variance Extraction) internally inside the application to provide immediate visual evidence.
+*   **Enterprise Bulk Analytics**: Batch processor enabling organizations to upload massive directories of target images and evaluate threat parameters and classifications simultaneously.
+
+## 🤖 Advanced Technology Stack
+
+TraceFinder operates entirely off a customized branch of state-of-the-art Deep Learning modules.
+
+*   **Deep Learning Protocol**: `PyTorch` mapping core architectural tensors.
+*   **Model Architecture**: Feature-extracted pre-trained `ResNet18` collapsed and meticulously adapted for specialized **1-Channel input logic**. This completely discards redundant color spaces to strictly isolate imperceptible noise artifacts.
+*   **Interface Engine**: `Streamlit` embedded with dynamically styled Neumorphic CSS properties, offering a sleek, premium, and low-latency intelligence dashboard.
+*   **Image Processing**: Headless `OpenCV` logic integrated with multidimensional `Numpy` arrays.
+
+## 📊 Supported Target Networks
+
+TraceFinder's Neural Network maintains incredibly rigorous accuracy constraints. It is trained to lock onto and differentiate traces spanning crucial global hardware components including but not limited to:
+*   **Canon Series:** Canon LiDE 120, CanoScan 9000F, CanoScan 220
+*   **Epson Series:** Epson Perfection V39, V370, V550  
+*   **Generic Classes:** High-variance generic scanner detection schemas  
+
+## 🚀 Local Development / Quick Start
+
+To run TraceFinder securely on your local computer using the optimized PyTorch CPU branch:
 
 ```bash
+# Clone the repository
+git clone https://github.com/Scanny-1/AI_TraceFinder.git
+cd AI_TraceFinder
+
+# Install specific Python dependencies (CPU environment)
 pip install -r requirements.txt
-cd app
-python -m streamlit run app.py
+
+# Launch the Application Node
+python -m streamlit run app/app.py
 ```
 
-## 📁 Project Structure
+## 📁 Repository Architecture
 
-```
+```text
 TraceFinder_Final/
 ├── app/
-│   └── app.py                  # Main Streamlit Enterprise Dashboard Interface
+│   └── app.py                  # Core Enterprise Dashboard UI & CSS Logic
 ├── model/  
-│   └── cnn_model.py            # Neural Network Architecture (Pretrained ResNet18 adapted for 1-Channel)
-├── dataset_loader.py           # I/O script mapping scanner identity patches (128x128)
-├── tamper_loader.py            # I/O script mapping manipulation anomaly datasets
-├── train.py                    # Scanner source-identification ML training loop
-├── train_tamper.py             # Feature tampering classification training loop
-├── model.pth                   # Frozen neural weights for Scanner Classification
-├── tamper_model.pth            # Frozen neural weights for Forgery Classification
-└── requirements.txt            # Python deep learning dependencies
+│   └── cnn_model.py            # Neural Network Architecture Logic Array
+├── Results/                    # Demonstration Videos & Example Outputs
+├── dataset_loader.py           # Scanner hardware patch extraction engine
+├── tamper_loader.py            # Manipulation extraction dataset loader
+├── train.py                    # Scanner origin ML algorithmic loop
+├── train_tamper.py             # Forgery classification parsing loop
+├── model.pth                   # Frozen neural network weights (Hardware)
+├── tamper_model.pth            # Frozen neural network weights (Tampering)
+└── requirements.txt            # Environment specifications list
 ```
 
-## 🔬 Features & Workflow
+## 📈 Demonstration Assets
 
-- **Scanner Hardware Identification**: Extracts micro-noise residuals natively printed by specific hardware to identify the exact scanner brand/model.
-- **Patch-Level Tampering Detection**: Advanced digital forgery detection algorithm detecting copy-move, splicing, and local retouching anomalies across scanned documentation. 
-- **Enterprise Dashboard**: A custom-styled, strictly professional multi-page UI handling real-time File Uploads bridging directly into PyTorch predictions.
-- **Dynamic Spectral Mapping**: Generates active Pseudo-Heatmaps (e.g., Built-In Spectral Analysis, Noise Variance Enhancement) upon image scanning inside the dashboard.
-- **Bulk Analytics Pipeline**: Handles simultaneous parsing and automated classification matrix metrics for batch uploads.
+To view exact historical performance metrics, pristine UI screenshots, and output graphics generated by our AI model directly, navigate into the `Results` folder located inside this repository!
 
-## 🌐 Access
+## 📄 Licensing & Permissions
 
-- **Live Deployment Link**: http://localhost:8503  *(Replace with actual Cloud Deployment Domain before final submission)*
-
-## 📊 Supported Scanners
-
-The Neural Network accurately differentiates traces spanning key hardware components including:
-- Canon LiDE 120, CanoScan 9000F, CanoScan 220
-- Epson Perfection V39, V370, V550
-- Generic HP Scanners
-
-## 🤖 Technology Stack
-
-- **Backend / Machine Learning**: Python, PyTorch, OpenCV, Scikit-Learn
-- **Core ML Architecture**: Transfer Learning (Feature-extracted `ResNet18` collapsed onto 1-Channel CNN logic)
-- **Frontend / Interface Engine**: Streamlit mapped with dynamic customized CSS properties rendering Neumorphic formatting.
-
-## 📈 Demonstration Outputs
-
-To view the exact performance, output graphics, and interface execution of the model, **just look the `results` folder** directly inside this repository!
-
-## 📄 License
-
-MIT License - see LICENSE file for details.
+Distributed under the **MIT License**. See `LICENSE` for granular information.
