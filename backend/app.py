@@ -7,6 +7,9 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+@app.route('/')
+def home():
+    return "TraceFinder Backend is LIVE and UPDATED!"
 
 # CORS Configuration
 CORS(app, resources={r"/*": {"origins": "*"}})
