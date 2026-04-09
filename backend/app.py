@@ -13,7 +13,7 @@ app = Flask(__name__)
 # --- CORS Configuration ---
 # Allows both localhost for development and your Render URL for production
 # Replace 'https://your-frontend.onrender.com' with your actual frontend URL later
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "https://ai-tracefinder-frontend-67vu.onrender.com"}})
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
