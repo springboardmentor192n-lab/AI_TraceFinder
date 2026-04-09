@@ -122,11 +122,16 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-TraceFinder uses `scikit-learn` and `backend/scanner_model.pkl` for trained-model scanner identification. If the model cannot be loaded or returns a low-confidence prediction, the app can still identify scanners by matching extracted features against reference samples in `backend/sample_dataset/`.
+TraceFinder uses `scikit-learn` and `backend/scanner_model.pkl` for trained-model scanner identification. If the model cannot be loaded or returns a low-confidence prediction, the app can still identify scanners by matching extracted features against reference samples in `backend/sample_dataset/`
 
 ## Retrain the Scanner Model
 
 If the feature extractor changes or new reference samples are added, rebuild the model:
+
+
+#Demo Video Link
+https://drive.google.com/file/d/1NkMfBG2F_37NpnsuScKc1srJRncRiHkG/view?usp=sharing
+## This is the drive link for the Demo video
 
 ```bash
 python backend/train_model.py
