@@ -3,19 +3,19 @@ import datetime
 import random
 import numpy as np
 import torch
-from flask import Flask, request, jsonify
-from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from scanner_pipeline import ScannerPipeline
+from flask import Flask, request, jsonify
+from flask_cors import CORS  # Make sure this import is here
+# ... other imports
 
 app = Flask(__name__)
 
-# --- CORS Configuration ---
-# Allows both localhost for development and your Render URL for production
-# Replace 'https://your-frontend.onrender.com' with your actual frontend URL later
-# Replace your existing CORS line with this:
+# --- THIS LINE MUST BE PRESENT ---
 CORS(app, resources={r"/*": {"origins": "*"}})
+# ---------------------------------
 
+# ... rest of code
 # Configuration
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
