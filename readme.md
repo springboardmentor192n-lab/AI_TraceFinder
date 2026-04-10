@@ -1,300 +1,247 @@
-# 🔍 TraceFinder – Scanner Identification System (Phase 1: Data Pipeline + Preparation)
+# TraceFinder — Forensic Scanner Identification System
 
-## 📌 Project Overview
-
-TraceFinder is an AI-powered forensic system designed to:
-
-* Identify the **scanner device** used to digitize a document
-* Detect **forgery and tampering** in scanned documents *(future phase)*
-
-This repository currently implements **Phase 1: Scanner Fingerprint Learning Pipeline**, which focuses on building a robust dataset and training-ready pipeline for **scanner identification using deep learning**.
+> Identify which scanner device produced any scanned document using ML forensics.
+> **No GPU required.** Runs on any laptop with Python 3.9+ and Node.js 18+.
 
 ---
 
-## 🎯 Objective (Current Phase)
+## Project Overview
 
-The goal of this phase is to:
+TraceFinder analyzes unique noise patterns, frequency-domain artifacts, and texture
+descriptors left behind by scanner devices to identify which scanner model produced
+a scanned image. Built on the **Supatlantique** dataset from Kaggle.
 
-* Extract **scanner-specific noise patterns (fingerprints)**
-* Build a **high-quality dataset of image patches**
-* Prepare a **memory-efficient deep learning pipeline**
-* Enable training of a CNN model for **scanner classification**
-
----
-
-## 📂 Dataset Used
-
-We used the **SUPATLANTIQUE Scanner Dataset**, which contains:
-
-* Scanned documents from multiple scanner devices
-* Multiple resolutions (150 DPI, 300 DPI)
-* Flatfield images (sensor calibration)
-* Tampered images (for future forgery detection)
+**Tech Stack:**
+- Frontend: Next.js 14 + TypeScript + Recharts
+- Backend: Python FastAPI
+- Models: SVM + Random Forest (scikit-learn) — CPU-friendly, no GPU needed
+- Features: PRNU noise · FFT frequency spectrum · LBP texture descriptors
 
 ---
 
-## ⚙️ Step-by-Step Implementation
+## Project Structure
 
----
-
-### 1️⃣ Dataset Understanding & Exploration (EDA)
-
-We analyzed the dataset structure and extracted key insights:
-
-* Identified **scanner-wise folder hierarchy**
-* Verified **image formats (.tif)**
-* Analyzed:
-
-  * Image resolutions
-  * Class distribution
-  * Sample visualizations
-* Detected **class imbalance**
-
-⚠️ Identified weak classes:
-
-* `Canon9000-2`
-* `EpsonV39-2`
-
-These had extremely low samples and were removed.
-
----
-
-### 2️⃣ Dataset Restructuring
-
-Original dataset was deeply nested.
-
-We converted it into a clean ML-friendly structure:
-
-```text
-dataset_clean/
-    Canon120-1/
-    Canon120-2/
-    Canon220/
-    Canon9000-1/
-    EpsonV370-1/
-    EpsonV370-2/
-    EpsonV39-1/
-    HP/
 ```
-
-✔ Each folder = one scanner class
-✔ All images consolidated into class folders
-
----
-
-### 3️⃣ Noise Residual Extraction (Core Forensics Step)
-
-To isolate scanner fingerprints, we removed document content.
-
-Method:
-
-```text
-Residual = Original Image − Gaussian Blurred Image
-```
-
-This step extracts:
-
-* Sensor noise (PRNU)
-* Scan-line artifacts
-* Frequency distortions
-
-Output:
-
-```text
-dataset_residual/
-```
-
-✔ This ensures the model learns **scanner noise, not document text**
-
----
-
-### 4️⃣ Patch Extraction (Key Scaling Step)
-
-Instead of using full images, we extracted patches.
-
-Configuration:
-
-```text
-Patch size: 128 × 128
-Patches per image: 500
-```
-
-Reason:
-
-* Scanner fingerprints are **local patterns**
-* Improves generalization
-* Prevents model from learning layout/text
-
-Output:
-
-```text
-dataset_patches/
-```
-
-Dataset size after extraction:
-
-```text
-~87,000+ patches
+tracefinder/
+├── backend/
+│   ├── main.py                  ← FastAPI app entry point
+│   ├── train.py                 ← Model training script
+│   ├── requirements.txt
+│   ├── routers/
+│   │   ├── predict.py           ← POST /api/predict/
+│   │   ├── report.py            ← POST /api/report/download
+│   │   └── history.py           ← GET/DELETE /api/history/
+│   ├── models/
+│   │   └── service.py           ← Model loading + inference
+│   ├── utils/
+│   │   └── features.py          ← PRNU + FFT + LBP extraction
+│   └── saved_model/             ← Created after training
+│       ├── best_model.pkl
+│       ├── svm_model.pkl
+│       ├── rf_model.pkl
+│       ├── label_encoder.pkl
+│       └── metrics.json
+│
+└── frontend/
+    ├── pages/
+    │   ├── index.tsx             ← Landing page
+    │   ├── scan.tsx              ← Upload + predict + visualize
+    │   ├── dashboard.tsx         ← Metrics, confusion matrix, charts
+    │   └── history.tsx           ← Prediction log
+    ├── components/
+    │   └── Navbar.tsx
+    ├── styles/
+    │   └── globals.css
+    ├── package.json
+    ├── next.config.js
+    └── tailwind.config.js
 ```
 
 ---
 
-### 5️⃣ Dataset Balancing
+## Week-by-Week Implementation Guide
 
-We addressed imbalance:
+### Week 1 — Dataset Collection & Labeling
+1. Download the **Supatlantique** dataset from Kaggle
+2. Extract it so each scanner model has its own folder:
+   ```
+   Supatlantique/
+     scanner_A/   ← folder name = scanner label
+     scanner_B/
+     ...
+   ```
+3. Run basic image analysis to check resolution, format, channels
 
-* Removed extremely small classes
-* Achieved balanced distribution across 8 scanners
+### Week 2 — Preprocessing
+- Our pipeline auto-handles: resize to 256×256, grayscale, normalize to [0,1]
+- See `backend/utils/features.py → load_and_preprocess()`
 
-Final classes:
+### Week 3 — Feature Extraction
+- **PRNU** (Photo Response Non-Uniformity): Gaussian denoising → residual noise → 6 statistics
+- **FFT**: 2D frequency transform → radially averaged power spectrum (64 bins)
+- **LBP**: Local Binary Patterns histogram (256 bins)
+- Total feature vector: **326 dimensions**
 
-```text
-Canon120-1
-Canon120-2
-Canon220
-Canon9000-1
-EpsonV370-1
-EpsonV370-2
-EpsonV39-1
-HP
+### Week 4 — Baseline Modeling
+```bash
+cd backend
+pip install -r requirements.txt
+python train.py --data_dir /path/to/Supatlantique --output_dir ./saved_model
 ```
+- Trains SVM (RBF kernel) + Random Forest (200 trees)
+- Outputs accuracy, F1, confusion matrix, cross-validation scores
+- Saves `metrics.json` → visible on Dashboard page
+
+### Week 5–6 — Model Evaluation + Explainability
+- Confusion matrix visualization on Dashboard
+- PRNU noise map + FFT spectrum on Scan page
+- Feature importance chart on Dashboard
+- SHAP can be added optionally (see Optional Extensions below)
+
+### Week 7 — Web App
+Start both servers:
+
+**Backend (Terminal 1):**
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+**Frontend (Terminal 2):**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:3000
+
+### Week 8 — Documentation & Demo
+- Screenshot each page (Home, Scan, Dashboard, History)
+- Export prediction reports from the Scan page
+- Prepare slides using the architecture diagram
 
 ---
 
-### 6️⃣ Train / Validation / Test Split
+## Running the App
 
-We split the dataset into:
+### Prerequisites
+- Python 3.9+
+- Node.js 18+
+- pip
 
-```text
-Train: 70%
-Validation: 15%
-Test: 15%
+### 1. Backend setup
+```bash
+cd tracefinder/backend
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+API runs at: http://localhost:8000
+API docs at: http://localhost:8000/docs
+
+### 2. Train the model (after downloading Supatlantique)
+```bash
+python train.py --data_dir /path/to/Supatlantique --output_dir ./saved_model
 ```
 
-Final structure:
-
-```text
-dataset_final/
-    train/
-    val/
-    test/
+### 3. Frontend setup
+```bash
+cd tracefinder/frontend
+npm install
+npm run dev
 ```
-
-✔ Ensures proper evaluation and prevents overfitting
+App runs at: http://localhost:3000
 
 ---
 
-### 7️⃣ PyTorch Dataset (Memory-Efficient Design)
+## Website Features
 
-We implemented a custom Dataset class:
-
-* Stores **file paths only**
-* Loads images **on demand**
-* Prevents RAM overload
-
-Key features:
-
-```text
-Lazy loading
-Label mapping (class_to_idx)
-Grayscale conversion
-Transform support
-```
+| Page | URL | Feature |
+|------|-----|---------|
+| Home | / | Overview, pipeline steps, feature cards |
+| Scan | /scan | Upload image, live preview, scanner prediction, PRNU/FFT viz, download report |
+| Dashboard | /dashboard | Model metrics, radar + bar charts, confusion matrix, feature importance |
+| History | /history | All past predictions with confidence scores |
 
 ---
 
-### 8️⃣ DataLoader Optimization
+## Feature Engineering
 
-Configured DataLoaders for stable training:
+### PRNU (Photo Response Non-Uniformity)
+Scanner sensors have microscopic manufacturing variations that create a unique
+noise fingerprint per device. We extract this by:
+1. Gaussian-blur the image to get a "clean" estimate
+2. Subtract blur from original → residual noise = PRNU
+3. Compute 6 statistics: mean, std, skewness, kurtosis, energy, entropy
 
+### FFT (Frequency Domain)
+Scanner optics and CCD/CIS sensors introduce periodic artifacts in the frequency domain.
+We compute:
+1. 2D Fast Fourier Transform
+2. Shift to center (DC component at origin)
+3. Radially average the power spectrum into 64 bins
+
+### LBP (Local Binary Patterns)
+Captures micro-texture signatures of the scanner surface and document interaction:
+1. For each pixel, compare to 24 neighbors on radius-3 circle
+2. Encode as binary pattern → histogram of 256 pattern types
+
+---
+
+## Model Performance Targets
+
+| Metric | Target |
+|--------|--------|
+| Accuracy | > 85% |
+| F1 Score | > 0.83 |
+| Scanners | 3–5 classes |
+| Training time (no GPU) | < 5 min |
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/predict/ | Upload image → get prediction + visualizations |
+| GET | /api/predict/labels | List all scanner classes |
+| GET | /api/predict/metrics | Get training metrics |
+| POST | /api/report/download | Download HTML forensic report |
+| GET | /api/history/ | Get prediction history |
+| DELETE | /api/history/ | Clear history |
+
+---
+
+## Optional Extensions
+
+### Add SHAP explainability (Week 6)
+```bash
+pip install shap
+```
 ```python
-train_loader:
-    batch_size = 32
-    shuffle = True
-    num_workers = 0
-    pin_memory = True
-
-val/test_loader:
-    batch_size = 64
-    shuffle = False
+import shap
+explainer = shap.TreeExplainer(rf_pipe.named_steps['rf'])
+shap_values = explainer.shap_values(X_test_scaled)
+shap.summary_plot(shap_values, X_test_scaled)
 ```
 
-✔ Avoids multiprocessing crashes (Windows/Jupyter safe)
-✔ Efficient batch loading
-
----
-
-### 9️⃣ Data Pipeline Validation
-
-We validated the pipeline:
-
-```text
-Batch shape: [32, 1, 128, 128]
-Labels shape: [32]
-Dataset size: ~87k samples
-```
-
-✔ Confirms correct preprocessing and loading
-
----
-
-## 🧠 Key Design Decisions
-
-* Used **noise residuals** to focus on scanner fingerprints
-* Used **patch-based learning** instead of full images
-* Removed **weak classes** to stabilize training
-* Built **memory-safe PyTorch pipeline**
-* Ensured **balanced multi-class classification setup**
-
----
-
-## 📊 Current Project Status
-
-```text
-Dataset Preparation        ✅ Completed
-EDA                        ✅ Completed
-Noise Extraction           ✅ Completed
-Patch Extraction           ✅ Completed
-Dataset Balancing          ✅ Completed
-Train/Test Split           ✅ Completed
-PyTorch Data Pipeline      ✅ Completed
-
-Model Training             🔜 Next
-Forgery Detection          🔜 Future Phase
-Deployment                 🔜 Final Phase
+### Add Grad-CAM (if switching to CNN)
+```bash
+pip install grad-cam torch torchvision
 ```
 
 ---
 
-## 🚀 Next Steps
+## Evaluation Criteria Checklist
 
-* Build CNN model for scanner classification
-* Train using extracted patches
-* Evaluate using accuracy + confusion matrix
-* Integrate forgery detection module
-
----
-
-## 🧩 Final Goal
-
-The complete system will:
-
-```text
-Input: Scanned document
-Output:
-    Scanner Model
-    Forgery Status
-    Forgery Type (Copy-move / Splicing / Retouching)
-```
-
----
-
-## 💡 Summary
-
-This phase establishes a **high-quality forensic data pipeline** that enables:
-
-* Robust scanner fingerprint learning
-* Scalable deep learning training
-* Foundation for advanced forgery detection
-
----
+- [x] Data collected and labeled (Supatlantique dataset)
+- [x] Feature engineering: PRNU + FFT + LBP
+- [x] Baseline ML: SVM + Random Forest
+- [x] UI: Upload → Predict → Download report
+- [x] Accuracy > 85% target (SVM on scanner-specific features)
+- [x] Confusion matrix visualization
+- [x] Feature importance chart
+- [x] Prediction history log
+- [x] Dark/light mode
+- [x] No GPU required
