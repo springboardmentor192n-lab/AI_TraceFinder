@@ -1,17 +1,27 @@
-import os
 import datetime
 import random
 import numpy as np
 import torch
-from flask import Flask, request, jsonify
-from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from scanner_pipeline import ScannerPipeline
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import os
 
 app = Flask(__name__)
 
+# Allowed origins
+allowed_origins = [
+    "https://ai-tracefinder-frontend-67vu.onrender.com",
+    "http://localhost:5173"
+]
+
 # Enable CORS
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(
+    app,
+    resources={r"/*": {"origins": allowed_origins}},
+    supports_credentials=True
+)
 
 # Upload folder configuration
 UPLOAD_FOLDER = "uploads"
