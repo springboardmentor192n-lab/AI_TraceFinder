@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: AI_TraceFinder--Backend
+    runtime: python
+    rootDir: backend
+    buildCommand: |
+      pip install -r requirements.txt
+      apt-get update && apt-get install -y poppler-utils
+    startCommand: gunicorn app:app
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+
+  - type: static_site
+    name: AI_TraceFinder--frontend
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://ai-tracefinder-backend-nt5y.onrender.com
