@@ -1,11 +1,12 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 flask
 flask-cors
-torch
-torchvision
+gunicorn
 numpy
 pillow
 opencv-python-headless
-werkzeug
 pdf2image
-gunicorn
+torch==2.2.2+cpu
+torchvision==0.17.2+cpu
+werkzeug
 gdown
