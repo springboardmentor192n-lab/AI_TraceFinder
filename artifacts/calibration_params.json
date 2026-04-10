@@ -1,0 +1,10 @@
+{
+  "method": "temperature_scaling_with_class_priors",
+  "temperature": 2.5,
+  "class_adjustments": {
+    "canon": -1.0,
+    "epson": 0.8,
+    "hp": 0.8
+  },
+  "description": "Apply temperature scaling T=2.5 and class-wise log-prior adjustments"
+}

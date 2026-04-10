@@ -372,9 +372,9 @@ const Auth = ({ setIsAuthenticated }) => {
           lineHeight: 1.4
         }}>
           By continuing, you agree to our{' '}
-          <a href="#" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Terms of Service</a>
+          <a href="/terms" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Terms of Service</a>
           {' '}and{' '}
-          <a href="#" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Privacy Policy</a>
+          <a href="/privacy" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Privacy Policy</a>
         </p>
       </div>
 

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { BarChart3, Users, Activity, Clock } from 'lucide-react';
+import { Users, Activity, Clock } from 'lucide-react';
 
 const Groups = ({ history, triggerToast }) => {
   const getScannerColor = (brand) => {
@@ -71,14 +71,7 @@ const Groups = ({ history, triggerToast }) => {
     return points.join(' ');
   };
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
+  
   const getRiskLevel = (tamperingCount, totalFiles) => {
     const percentage = (tamperingCount / totalFiles) * 100;
     if (percentage >= 50) return { level: 'High', color: '#ff4560' };

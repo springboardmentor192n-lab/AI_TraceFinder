@@ -29,14 +29,14 @@ const Home = ({ onAnalysis, triggerToast }) => {
   };
 
   const handleFileSelect = (file) => {
-    const validTypes = ['image/jpeg', 'image/png', 'image/tiff', 'application/pdf'];
+    const validTypes = ['image/jpeg', 'image/png', 'image/tiff', 'image/jpg'];
     if (!validTypes.includes(file.type)) {
-      triggerToast('Please upload a valid file (JPG, PNG, TIFF, PDF)', 'warning');
+      triggerToast('Please upload a valid file (JPG, PNG, TIFF)', 'warning');
       return;
     }
 
-    if (file.size > 16 * 1024 * 1024) {
-      triggerToast('File size must be less than 16MB', 'warning');
+    if (file.size > 200 * 1024 * 1024) {
+      triggerToast('File size must be less than 200MB', 'warning');
       return;
     }
 
@@ -50,97 +50,39 @@ const Home = ({ onAnalysis, triggerToast }) => {
     }
   };
 
-  const simulateAnalysis = async () => {
+  const analyzeDocument = async () => {
     setIsAnalyzing(true);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Create deterministic analysis based on file hash
-    const fileHash = await createFileHash(selectedFile);
-    
-    // Deterministic scanner selection based on file hash
-    const scanners = [
-      { brand: 'Canon', model: 'LiDE 120' },
-      { brand: 'Canon', model: 'CanoScan 9000F' },
-      { brand: 'HP', model: 'ScanJet Pro 2500' },
-      { brand: 'Epson', model: 'Perfection V39' },
-      { brand: 'Epson', model: 'Perfection V550' }
-    ];
-    
-    // Use file hash to consistently select the same scanner for the same file
-    const scannerIndex = Math.abs(hashCode(fileHash)) % scanners.length;
-    const selectedScanner = scanners[scannerIndex];
-    
-    // Generate consistent confidence based on file characteristics
-    let confidence = 75 + (fileHash.length % 20); // 75-95% range
-    
-    const analysis = {
-      type: 'scanner',
-      scanner: {
-        brand: selectedScanner.brand,
-        model: selectedScanner.model,
-        confidence: confidence,
-        confidenceLevel: confidence >= 95 ? 'Very High' : confidence >= 85 ? 'High' : 'Medium'
-      },
-      fileName: selectedFile.name,
-      fileSize: selectedFile.size,
-      fileType: selectedFile.type,
-      tampering: {
-        detected: Math.abs(hashCode(fileHash)) % 3 === 0, // 1 in 3 chance
-        confidence: Math.abs(hashCode(fileHash)) % 40 + 10, // 10-49%
-        riskLevel: Math.abs(hashCode(fileHash)) % 3 === 0 ? 'Medium' : 'Low'
-      },
-      features: {
-        prnuQuality: confidence >= 85 ? 'Excellent' : confidence >= 70 ? 'Good' : 'Fair',
-        noisePattern: confidence >= 80 ? 'Very High' : 'High',
-        imageQuality: confidence >= 85 ? 'Excellent' : 'High',
-        metadataStatus: 'Complete'
-      },
-      resolution: selectedFile.name.includes('300') ? '300 dpi' : '150 dpi',
-      datasetSource: Math.abs(hashCode(fileHash)) % 2 === 0 ? 'Official' : 'Wikipedia'
-    };
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
 
-    onAnalysis(analysis);
-    setIsAnalyzing(false);
-    triggerToast('Analysis complete!', 'success');
-    
-    // Navigate to results page
-    navigate('/results', { state: { analysis } });
-  };
+      const response = await fetch('http://localhost:5000/api/analyze', {
+        method: 'POST',
+        body: formData,
+      });
 
-  // Helper function to create simple hash from file
-  const createFileHash = async (file) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const arrayBuffer = e.target.result;
-        const uint8Array = new Uint8Array(arrayBuffer);
-        let hash = 0;
-        for (let i = 0; i < uint8Array.length; i++) {
-          hash = ((hash << 5) - hash) + uint8Array[i];
-          hash = hash & hash;
-        }
-        resolve(hash.toString());
-      };
-      reader.readAsArrayBuffer(file.slice(0, 1024)); // Only read first 1KB for speed
-    });
-  };
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Analysis failed');
+      }
 
-  // Helper function to convert string to hash code
-  const hashCode = (str) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
+      const data = await response.json();
+      const analysis = data.analysis;
+
+      onAnalysis(analysis);
+      triggerToast('Analysis complete!', 'success');
+      navigate('/results', { state: { analysis } });
+    } catch (error) {
+      triggerToast(error.message || 'Analysis failed', 'warning');
+    } finally {
+      setIsAnalyzing(false);
     }
-    return hash;
   };
 
   const handleAnalyze = () => {
     if (selectedFile) {
-      simulateAnalysis();
+      analyzeDocument();
     }
   };
 
@@ -172,12 +114,12 @@ const Home = ({ onAnalysis, triggerToast }) => {
             {selectedFile ? selectedFile.name : 'Drop your document here or click to browse'}
           </div>
           <div className="upload-subtext">
-            Supported formats: JPG, PNG, TIFF, PDF (Max 16MB)
+            Supported formats: JPG, PNG, TIFF (Max 200MB)
           </div>
           <input
             ref={fileInputRef}
             type="file"
-            accept=".jpg,.jpeg,.png,.tiff,.tif,.pdf"
+            accept=".jpg,.jpeg,.png,.tiff,.tif"
             onChange={handleFileInputChange}
             style={{ display: 'none' }}
           />

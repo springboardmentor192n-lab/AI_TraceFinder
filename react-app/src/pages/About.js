@@ -191,7 +191,7 @@ const About = () => {
         <h3>Supported Scanner Models</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
           {[
-            'Canon LiDE 120', 'Canon CanoScan 9000F', 'HP ScanJet Pro 2500', 
+            'Canon LiDE 120', 'Canon CanoScan 9000F', 'Canon 220', 'HP ScanJet Pro 2500', 
             'Epson Perfection V39', 'Epson Perfection V550', 'Canon PIXMA',
             'Brother MFC', 'Xerox WorkCentre', 'Fujitsu ScanSnap',
             'Kodak ScanMate', 'Unknown/Detect'

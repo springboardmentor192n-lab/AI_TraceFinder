@@ -33,10 +33,8 @@ const Results = ({ triggerToast }) => {
   const datasetSource = analysis.datasetSource || 'Official';
 
   // Top-3 candidates
-  const top3Candidates = [
-    { rank: 1, scanner: `${scannerBrand} ${scannerModel}`, confidence: confidenceScore },
-    { rank: 2, scanner: 'Alternative Scanner 1', confidence: Math.max(confidenceScore * 0.1, 1) },
-    { rank: 3, scanner: 'Alternative Scanner 2', confidence: Math.max(confidenceScore * 0.05, 0.5) }
+  const top3Candidates = analysis.top3 || [
+    { rank: 1, scanner: `${scannerBrand} ${scannerModel}`, confidence: confidenceScore }
   ];
 
   // Feature quality metrics

@@ -4,9 +4,8 @@ import { AlertTriangle, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react
 
 const Tamper = ({ triggerToast }) => {
   const location = useLocation();
-  const analysis = location.state?.analysis;
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-
+  
   // Sample tampering analysis data
   const tamperingData = {
     detected: true,
@@ -17,14 +16,8 @@ const Tamper = ({ triggerToast }) => {
       'Noise pattern inconsistencies found',
       'Unusual JPEG artifact patterns',
       'Metadata manipulation suspected'
-    ],
-    analysis: {
-      elaScore: 68,
-      noiseInconsistency: 75,
-      jpegArtifacts: 82,
-      metadataAnomaly: 71
-    }
-  };
+    ]
+    };
 
   const runTamperAnalysis = async () => {
     setIsAnalyzing(true);
