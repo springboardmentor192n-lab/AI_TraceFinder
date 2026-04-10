@@ -9,6 +9,12 @@ from werkzeug.utils import secure_filename
 from scanner_pipeline import ScannerPipeline
 
 app = Flask(__name__)
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({
+        "status": "Backend is running",
+        "service": "AI TraceFinder API"
+    })
 
 # --- CORS Configuration ---
 # Allows both localhost for development and your Render URL for production
