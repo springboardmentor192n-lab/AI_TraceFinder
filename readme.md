@@ -140,6 +140,7 @@ TraceFinder/
     ```
     Open the provided link (usually [http://localhost:5173](http://localhost:5173)) in your browser.
 
+    [![Live Demo](https://img.shields.io/badge/Live-Demo-success?style=for-the-badge&logo=render)](https://ai-tracefinder-frontend-67vu.onrender.com)
 ---
 
 ## 📝 Usage
