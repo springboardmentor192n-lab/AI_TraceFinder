@@ -50,10 +50,10 @@ def home():
         "service": "TraceFinder API"
     })
 
-@app.route("/predict", methods=["POST"])
+@app.route('/predict', methods=['POST', 'OPTIONS'])
 def predict():
-    if PIPELINE is None or model is None:
-        return jsonify({"error": "Model not loaded"}), 500
+    if request.method == 'OPTIONS':
+        return jsonify({"status": "ok"}), 200
 
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
