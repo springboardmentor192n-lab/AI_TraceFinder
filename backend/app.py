@@ -1,6 +1,5 @@
 import os
 import datetime
-import random
 import numpy as np
 import torch
 from flask import Flask, request, jsonify
@@ -11,15 +10,16 @@ from scanner_pipeline import ScannerPipeline
 # Initialize Flask App
 app = Flask(__name__)
 
-# Enable CORS
+# --- CORS Configuration ---
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Upload Configuration
+# --- Configuration ---
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024  # 20MB limit
 
-# Initialize Model Pipeline
+# --- Initialize Pipeline ---
 PIPELINE = ScannerPipeline(
     model_path="model/deep_scanner_cnn.pth",
     label_map_path="model/label_map_cnn.npy"
@@ -29,10 +29,11 @@ model = PIPELINE.model
 idx_to_label = PIPELINE.idx_to_label
 
 
-@app.route("/")
+# --- Health Check Route ---
+@app.route("/", methods=["GET"])
 def home():
     return jsonify({
-        "message": "TraceFinder Backend is Running!",
+        "message": "TraceFinder Backend is Running",
         "status": "success"
     })
 
@@ -45,6 +46,24 @@ def health():
     })
 
 
+# --- Utility Function: Compute Metrics ---
+def compute_metrics(residual):
+    """Compute basic forensic metrics from residual noise."""
+    residual = residual.astype(np.float32)
+
+    prnu_quality = float(np.clip(np.std(residual) / 10, 0, 1))
+    noise_intensity = float(np.clip(np.std(residual) * 10, 0, 100))
+    image_quality_score = float(np.clip(100 - noise_intensity, 0, 100))
+
+    return {
+        "prnu_quality": round(prnu_quality, 2),
+        "noise_intensity": round(noise_intensity, 2),
+        "image_quality_score": round(image_quality_score, 1),
+        "metadata_intact": False
+    }
+
+
+# --- Prediction Route ---
 @app.route("/predict", methods=["POST"])
 def predict():
     if "file" not in request.files:
@@ -63,43 +82,36 @@ def predict():
     file.save(filepath)
 
     try:
-        # Extract features
+        # Extract residual tensor
         input_tensor = PIPELINE.extract_residual(filepath)
 
+        # Run inference
         with torch.no_grad():
             outputs = model(input_tensor)
             probs = torch.nn.functional.softmax(outputs, dim=1)
-
-            # Top-5 predictions
             top5_probs, top5_indices = torch.topk(probs, 5)
 
-            top5_results = []
-            for i in range(5):
-                idx = top5_indices[0][i].item()
-                prob = top5_probs[0][i].item()
-                label = idx_to_label.get(idx, "Unknown Scanner")
+        # Prepare predictions
+        top5_results = []
+        for i in range(5):
+            idx = top5_indices[0][i].item()
+            prob = top5_probs[0][i].item()
+            label = idx_to_label.get(idx, "Unknown Scanner")
 
-                top5_results.append({
-                    "label": str(label),
-                    "value": round(float(prob * 100), 4)
-                })
+            top5_results.append({
+                "label": str(label),
+                "value": round(prob * 100, 2)
+            })
 
-            # Original confidence score
-            main_idx = top5_indices[0][0].item()
-            predicted_label = idx_to_label.get(main_idx, "Unknown Scanner")
-            confidence = round(float(top5_probs[0][0].item() * 100), 4)
+        main_idx = top5_indices[0][0].item()
+        main_prob = top5_probs[0][0].item()
 
-            # Avoid unrealistic 100%
-            if confidence >= 100.0:
-                confidence = 99.9999
+        predicted_label = idx_to_label.get(main_idx, "Unknown")
+        confidence = round(main_prob * 100, 2)
 
-        # Generate realistic forensic metrics
-        metrics = {
-            "prnu_quality": round(float(np.clip(np.random.normal(0.88, 0.05), 0.75, 0.98)), 2),
-            "noise_intensity": round(float(np.clip(np.random.normal(60, 10), 30, 85)), 2),
-            "image_quality_score": round(float(np.clip(np.random.normal(92, 4), 80, 99)), 1),
-            "metadata_intact": bool(np.random.choice([True, False], p=[0.7, 0.3]))
-        }
+        # Generate residual for metrics
+        residual_tensor = input_tensor.squeeze().cpu().numpy()
+        metrics = compute_metrics(residual_tensor)
 
         result = {
             "id": int(np.random.randint(10000, 99999)),
@@ -118,8 +130,6 @@ def predict():
             "status": "success"
         }
 
-        print(f"Prediction: {predicted_label} ({confidence}%)")
-
         return jsonify(result)
 
     except Exception as e:
@@ -131,7 +141,7 @@ def predict():
             os.remove(filepath)
 
 
-# Run Locally
+# --- Run Locally ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
