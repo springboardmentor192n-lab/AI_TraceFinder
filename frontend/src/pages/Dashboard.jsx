@@ -1,17 +1,29 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
-  UploadCloud, FileSearch, ScanLine, CheckCircle2, ShieldCheck,
-  Download, FileText, Share2, BarChart2
+  UploadCloud, FileSearch, ScanLine, CheckCircle2,
+  ShieldCheck, Download, FileText, Share2, BarChart2
 } from 'lucide-react';
 import {
-  Chart as ChartJS, ArcElement, Tooltip, Legend,
-  BarElement, CategoryScale, LinearScale
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement
+);
 
 const Dashboard = () => {
   const [file, setFile] = useState(null);
@@ -20,159 +32,141 @@ const Dashboard = () => {
   const [result, setResult] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Backend URL from environment variable
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const API_URL =
+    import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-  // Cleanup object URLs to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
-
+  // Handle File Selection
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (!selectedFile) return;
-
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/jpg",
-      "application/pdf"
-    ];
-
-    if (!allowedTypes.includes(selectedFile.type)) {
-      alert("Unsupported file type. Please upload JPG, PNG, or PDF.");
-      return;
+    if (selectedFile) {
+      setFile(selectedFile);
+      setPreviewUrl(URL.createObjectURL(selectedFile));
+      setResult(null);
     }
-
-    setFile(selectedFile);
-    setPreviewUrl(URL.createObjectURL(selectedFile));
-    setResult(null);
   };
 
+  // Run Analysis
   const runAnalysis = async () => {
     if (!file) return;
-
     setIsAnalyzing(true);
     setResult(null);
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
     try {
-      console.log("Attempting to connect to:", `${API_URL}/predict`);
+      console.log("Connecting to:", `${API_URL}/predict`);
 
       const response = await fetch(`${API_URL}/predict`, {
-        method: 'POST',
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server Error (${response.status}): ${errorText}`);
+        throw new Error(`Server Error: ${response.status}`);
       }
 
       const data = await response.json();
 
       if (data.error) {
-        throw new Error(data.error);
+        alert("Server Error: " + data.error);
+      } else {
+        console.log("Backend Response:", data);
+
+        // Ensure metrics exist
+        data.metrics = data.metrics || {
+          prnu_quality: 0,
+          noise_intensity: 0,
+          image_quality_score: 0,
+          metadata_intact: false,
+        };
+
+        setResult(data);
+        saveToHistory(data);
       }
-
-      setResult(data);
-      saveToHistory(data);
-
     } catch (err) {
       console.error("TraceFinder Connection Error:", err);
-      alert(
-        `Connection Failed: ${err.message}\n\n` +
-        `Please verify that:\n` +
-        `1. The backend is deployed and running.\n` +
-        `2. VITE_API_URL is set correctly.\n` +
-        `3. CORS is enabled on the backend.`
-      );
+      alert(`Connection Failed: ${err.message}`);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
+  // Save to Local Storage
   const saveToHistory = (data) => {
-    const history = JSON.parse(localStorage.getItem('tracefinder_history') || '[]');
+    const history = JSON.parse(
+      localStorage.getItem("tracefinder_history") || "[]"
+    );
     history.unshift(data);
     if (history.length > 20) history.pop();
-    localStorage.setItem('tracefinder_history', JSON.stringify(history));
+    localStorage.setItem(
+      "tracefinder_history",
+      JSON.stringify(history)
+    );
   };
 
+  // Export JSON
   const exportJSON = () => {
     if (!result) return;
-
     const blob = new Blob(
       [JSON.stringify(result, null, 2)],
-      { type: 'application/json' }
+      { type: "application/json" }
     );
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `TraceFinder_Report_${result.id}.json`;
+    a.download = `report_${result.id}.json`;
     a.click();
-    URL.revokeObjectURL(url);
   };
 
+  // Generate PDF Report
   const generatePDF = () => {
     if (!result) return;
 
-    try {
-      const doc = new jsPDF();
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(20);
-      doc.setTextColor(79, 70, 229);
-      doc.text("TraceFinder Forensic Report", 14, 20);
+    const metrics = result.metrics || {};
 
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text("Scanner Identification Analysis", 14, 26);
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("TraceFinder Forensic Report", 14, 20);
 
-      autoTable(doc, {
-        startY: 35,
-        theme: 'striped',
-        head: [['Field', 'Value']],
-        body: [
-          ['Report ID', String(result.id)],
-          ['Timestamp', result.timestamp],
-          ['Filename', result.filename],
-          ['Scanner', result.scanner],
-          ['Confidence', `${result.confidence}%`],
+    autoTable(doc, {
+      startY: 30,
+      head: [["Field", "Value"]],
+      body: [
+        ["Report ID", result.id],
+        ["Filename", result.filename],
+        ["Timestamp", result.timestamp],
+        ["Predicted Scanner", result.scanner],
+        ["Confidence", `${result.confidence}%`],
+      ],
+    });
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 10,
+      head: [["Metric", "Value"]],
+      body: [
+        ["PRNU Quality", metrics.prnu_quality ?? "N/A"],
+        ["Noise Intensity", metrics.noise_intensity ?? "N/A"],
+        ["Image Quality Score", metrics.image_quality_score ?? "N/A"],
+        [
+          "Metadata Status",
+          metrics.metadata_intact ? "Intact" : "Missing",
         ],
-      });
+      ],
+    });
 
-      if (result.predictions) {
-        autoTable(doc, {
-          startY: doc.lastAutoTable.finalY + 10,
-          head: [['Rank', 'Scanner Model', 'Probability']],
-          body: result.predictions.map((p, i) => [
-            i + 1,
-            p.label,
-            `${p.value}%`
-          ]),
-        });
-      }
-
-      doc.save(`TraceFinder_Report_${result.id}.pdf`);
-    } catch (error) {
-      console.error("PDF Error:", error);
-      alert("Could not generate PDF.");
-    }
+    doc.save(`TraceFinder_Report_${result.id}.pdf`);
   };
 
+  // Share Result
   const shareResult = () => {
     if (!result) return;
-
     const text = `Scanner Analysis Result: ${result.scanner} with ${result.confidence}% confidence.`;
 
     if (navigator.share) {
       navigator.share({
-        title: 'TraceFinder Result',
-        text: text
+        title: "TraceFinder Result",
+        text,
       });
     } else {
       navigator.clipboard.writeText(text);
@@ -180,27 +174,30 @@ const Dashboard = () => {
     }
   };
 
-  const chartData = result ? {
-    labels: result.predictions.map(p => p.label),
-    datasets: [
-      {
-        label: 'Confidence %',
-        data: result.predictions.map(p => p.value),
-        backgroundColor: [
-          'rgba(99, 102, 241, 0.8)',
-          'rgba(139, 92, 246, 0.7)',
-          'rgba(168, 85, 247, 0.6)',
-          'rgba(192, 132, 252, 0.5)',
-          'rgba(221, 214, 254, 0.4)',
+  // Chart Data
+  const chartData = result
+    ? {
+        labels: result.predictions.map((p) => p.label),
+        datasets: [
+          {
+            label: "Confidence %",
+            data: result.predictions.map((p) => p.value),
+            backgroundColor: [
+              "#6366F1",
+              "#8B5CF6",
+              "#A855F7",
+              "#C084FC",
+              "#DDD6FE",
+            ],
+          },
         ],
-      },
-    ],
-  } : null;
+      }
+    : null;
 
   return (
     <div className="max-w-7xl mx-auto p-6 lg:p-10 min-h-screen bg-slate-950 text-slate-200">
       {/* Header */}
-      <div className="mb-8 bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
+      <div className="mb-8 bg-slate-900 border border-slate-700 rounded-xl p-5">
         <div className="flex items-center gap-4">
           <ShieldCheck className="w-8 h-8 text-indigo-400" />
           <div>
@@ -208,19 +205,18 @@ const Dashboard = () => {
               Scanner Identification Dashboard
             </h2>
             <p className="text-sm text-gray-400">
-              Upload a forensic document to analyze microscopic noise patterns.
+              Upload a document to analyze microscopic noise patterns.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Upload Section */}
         <div className="lg:col-span-5 space-y-6">
           <div
             onClick={() => fileInputRef.current.click()}
-            className="bg-slate-900 border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all min-h-[320px]"
+            className="bg-slate-900 border-2 border-dashed border-slate-700 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer min-h-[300px]"
           >
             <input
               type="file"
@@ -229,131 +225,149 @@ const Dashboard = () => {
               className="hidden"
               accept="image/*,.pdf"
             />
-
             {file ? (
               <>
                 <CheckCircle2 className="w-12 h-12 text-emerald-500 mb-3" />
-                <p className="text-white font-medium text-sm break-all">
-                  {file.name}
-                </p>
-                <p className="text-xs text-slate-500 mt-2">
-                  Click to replace file
-                </p>
+                <p className="text-white">{file.name}</p>
               </>
             ) : (
               <>
                 <UploadCloud className="w-12 h-12 text-gray-500 mb-4" />
-                <p className="text-gray-300 font-medium">
-                  Upload Suspect Document
-                </p>
-                <p className="text-xs text-slate-500 mt-2">
-                  Supports JPG, PNG, PDF
-                </p>
+                <p>Upload Image or PDF</p>
               </>
             )}
           </div>
 
-          {/* Preview */}
-          {previewUrl && (
-            <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-inner">
-              <div className="p-3 border-b border-slate-800 flex justify-between items-center">
-                <span className="text-xs text-gray-500 uppercase font-bold">
-                  Preview
-                </span>
-                <ScanLine className="w-4 h-4 text-slate-500" />
-              </div>
-              <div className="p-4 bg-slate-950 flex items-center justify-center">
-                {file.type === "application/pdf" ? (
-                  <embed
-                    src={previewUrl}
-                    type="application/pdf"
-                    className="w-full h-64 rounded"
-                  />
-                ) : (
-                  <img
-                    src={previewUrl}
-                    alt="Preview"
-                    className="max-h-64 object-contain rounded"
-                  />
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Analyze Button */}
           <button
             onClick={runAnalysis}
             disabled={!file || isAnalyzing}
-            className={`w-full px-8 py-4 rounded-lg font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-all ${
-              !file
-                ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                : isAnalyzing
-                ? 'bg-amber-600 cursor-wait'
-                : 'bg-indigo-600 hover:bg-indigo-500'
-            }`}
+            className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-bold"
           >
-            {isAnalyzing ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Analyzing Micro-patterns...
-              </>
-            ) : (
-              <>
-                <FileSearch className="w-5 h-5" />
-                Run Forensic Analysis
-              </>
-            )}
+            {isAnalyzing ? "Analyzing..." : "Run Forensic Analysis"}
           </button>
         </div>
 
         {/* Results Section */}
         <div className="lg:col-span-7 space-y-6">
-          {!result && !isAnalyzing && (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl min-h-[500px] flex items-center justify-center text-gray-600">
-              <div className="text-center">
-                <BarChart2 className="w-16 h-16 mx-auto mb-4 opacity-10" />
-                <p className="text-lg">
-                  Upload and process a file to see results
-                </p>
-              </div>
-            </div>
-          )}
-
-          {isAnalyzing && (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl min-h-[500px] flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p className="mt-6 text-indigo-400 font-medium animate-pulse">
-                  Extracting PRNU Noise Features...
-                </p>
-              </div>
+          {!result && (
+            <div className="bg-slate-900 border border-slate-800 rounded-xl min-h-[400px] flex items-center justify-center">
+              <BarChart2 className="w-16 h-16 opacity-20" />
             </div>
           )}
 
           {result && (
-            <div className="bg-slate-900 border border-emerald-500/30 rounded-xl p-6 shadow-xl">
-              <h2 className="text-2xl font-bold text-white">
-                {result.scanner}
-              </h2>
-              <p className="text-emerald-400 font-semibold">
-                Confidence: {result.confidence}%
-              </p>
-
-              {chartData && (
-                <div className="mt-6">
-                  <Bar data={chartData} />
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
-                <button onClick={generatePDF} className="btn">PDF</button>
-                <button onClick={exportJSON} className="btn">JSON</button>
-                <button onClick={shareResult} className="btn">Share</button>
+            <>
+              {/* Prediction */}
+              <div className="bg-slate-900 p-6 rounded-xl">
+                <h2 className="text-2xl font-bold">
+                  {result.scanner}
+                </h2>
+                <p className="text-emerald-400">
+                  Confidence: {result.confidence}%
+                </p>
               </div>
-            </div>
+
+              {/* Chart */}
+              <div className="bg-slate-900 p-6 rounded-xl h-64">
+                {chartData && (
+                  <Bar
+                    data={chartData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: { legend: { display: false } },
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* Metrics */}
+              <div className="bg-slate-900 p-6 rounded-xl">
+                <h3 className="font-bold mb-4">
+                  Feature Quality Metrics
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <MetricCard
+                    label="PRNU Quality"
+                    value={result.metrics.prnu_quality}
+                    max="1.0"
+                    color="indigo"
+                  />
+                  <MetricCard
+                    label="Noise Level"
+                    value={result.metrics.noise_intensity}
+                    max="100"
+                    color="red"
+                  />
+                  <MetricCard
+                    label="Image Quality"
+                    value={result.metrics.image_quality_score}
+                    max="100"
+                    color="emerald"
+                  />
+                  <div className="bg-slate-800 p-4 rounded-lg">
+                    <p className="text-xs text-gray-400">
+                      Metadata Status
+                    </p>
+                    <p className="font-bold">
+                      {result.metrics.metadata_intact
+                        ? "Intact"
+                        : "Missing"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <button
+                  onClick={generatePDF}
+                  className="bg-slate-800 p-3 rounded-lg"
+                >
+                  <FileText className="inline mr-2" /> PDF
+                </button>
+                <button
+                  onClick={exportJSON}
+                  className="bg-slate-800 p-3 rounded-lg"
+                >
+                  <Download className="inline mr-2" /> JSON
+                </button>
+                <button
+                  onClick={shareResult}
+                  className="bg-slate-800 p-3 rounded-lg"
+                >
+                  <Share2 className="inline mr-2" /> Share
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
+    </div>
+  );
+};
+
+// Metric Card Component
+const MetricCard = ({ label, value, max, color }) => {
+  const val = value || 0;
+  const percent = (val / parseFloat(max)) * 100;
+
+  const colors = {
+    indigo: "bg-indigo-500",
+    red: "bg-red-500",
+    emerald: "bg-emerald-500",
+  };
+
+  return (
+    <div className="bg-slate-800 p-4 rounded-lg">
+      <p className="text-xs text-gray-400">{label}</p>
+      <div className="w-full bg-slate-700 rounded-full h-2 my-2">
+        <div
+          className={`${colors[color]} h-2 rounded-full`}
+          style={{ width: `${percent}%` }}
+        ></div>
+      </div>
+      <p className="text-white font-bold">{val}</p>
     </div>
   );
 };
