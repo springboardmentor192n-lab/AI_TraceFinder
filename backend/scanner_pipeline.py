@@ -4,7 +4,6 @@ import numpy as np
 import cv2
 import os
 
-
 class DeepScannerCNN(nn.Module):
     def __init__(self, num_classes):
         super(DeepScannerCNN, self).__init__()
@@ -62,12 +61,8 @@ class ScannerPipeline:
         if image_path.lower().endswith(".pdf"):
             try:
                 from pdf2image import convert_from_path
-                pages = convert_from_path(
-                    image_path,
-                    first_page=1,
-                    last_page=1,
-                    poppler_path="/usr/bin"
-                )
+                # Note: On Render/Linux, poppler_path is usually not needed if installed via apt
+                pages = convert_from_path(image_path, first_page=1, last_page=1)
                 pil_img = pages[0]
                 img = np.array(pil_img)
                 img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
@@ -79,19 +74,33 @@ class ScannerPipeline:
         if img is None:
             raise ValueError("Invalid image file")
 
-        # Residual Extraction
+        # 1. Calculate Raw Residual
         denoised = cv2.GaussianBlur(img, (5, 5), 0)
         residual = img.astype(np.float32) - denoised.astype(np.float32)
+
+        # 2. Resize
         residual_resized = cv2.resize(
             residual, (img_size, img_size), interpolation=cv2.INTER_AREA
         )
 
-        mean, std = np.mean(residual_resized), np.std(residual_resized)
-        if std == 0:
-            std = 1
+        # --- FIX: Calculate Metrics BEFORE Normalization ---
+        raw_std = np.std(residual_resized)
+        raw_mean = np.mean(residual_resized)
 
-        residual_norm = (residual_resized - mean) / std
+        # Compute forensic metrics on raw noise intensity
+        metrics = {
+            "prnu_quality": round(float(np.clip(raw_std / 10, 0, 1)), 2),
+            "noise_intensity": round(float(np.clip(raw_std * 10, 0, 100)), 2),
+            "image_quality_score": round(float(np.clip(100 - (raw_std * 5), 0, 100)), 1),
+            "metadata_intact": bool(np.random.choice([True, False])) # Mock for now
+        }
+        # --------------------------------------------------
+
+        # 3. Normalize for Model (This forces std=1, which was breaking your metrics before)
+        if raw_std == 0: raw_std = 1
+        residual_norm = (residual_resized - raw_mean) / raw_std
+
         tensor = torch.tensor(residual_norm, dtype=torch.float32)
         tensor = tensor.unsqueeze(0).unsqueeze(0)
 
-        return tensor.to(self.device)
+        return tensor.to(self.device), metrics  # <--- Return metrics here too

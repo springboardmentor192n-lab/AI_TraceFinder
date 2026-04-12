@@ -28,7 +28,6 @@ PIPELINE = ScannerPipeline(
 model = PIPELINE.model
 idx_to_label = PIPELINE.idx_to_label
 
-
 # --- Health Check Route ---
 @app.route("/", methods=["GET"])
 def home():
@@ -37,31 +36,12 @@ def home():
         "status": "success"
     })
 
-
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
         "status": "ok",
         "model_loaded": model is not None
     })
-
-
-# --- Utility Function: Compute Metrics ---
-def compute_metrics(residual):
-    """Compute basic forensic metrics from residual noise."""
-    residual = residual.astype(np.float32)
-
-    prnu_quality = float(np.clip(np.std(residual) / 10, 0, 1))
-    noise_intensity = float(np.clip(np.std(residual) * 10, 0, 100))
-    image_quality_score = float(np.clip(100 - noise_intensity, 0, 100))
-
-    return {
-        "prnu_quality": round(prnu_quality, 2),
-        "noise_intensity": round(noise_intensity, 2),
-        "image_quality_score": round(image_quality_score, 1),
-        "metadata_intact": False
-    }
-
 
 # --- Prediction Route ---
 @app.route("/predict", methods=["POST"])
@@ -82,8 +62,8 @@ def predict():
     file.save(filepath)
 
     try:
-        # Extract residual tensor
-        input_tensor = PIPELINE.extract_residual(filepath)
+        # --- FIX: Unpack both tensor AND metrics from pipeline ---
+        input_tensor, metrics = PIPELINE.extract_residual(filepath)
 
         # Run inference
         with torch.no_grad():
@@ -109,16 +89,13 @@ def predict():
         predicted_label = idx_to_label.get(main_idx, "Unknown")
         confidence = round(main_prob * 100, 2)
 
-        # Generate residual for metrics
-        residual_tensor = input_tensor.squeeze().cpu().numpy()
-        metrics = compute_metrics(residual_tensor)
-
+        # Use the metrics passed from the pipeline (calculated on raw data)
         result = {
             "id": int(np.random.randint(10000, 99999)),
             "scanner": str(predicted_label),
             "confidence": confidence,
             "predictions": top5_results,
-            "metrics": metrics,
+            "metrics": metrics, # <--- Use the metrics dict here
             "artifacts": [
                 "Noise Pattern Extracted",
                 "Deep Feature Analysis",
@@ -140,8 +117,6 @@ def predict():
         if os.path.exists(filepath):
             os.remove(filepath)
 
-
-# --- Run Locally ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
